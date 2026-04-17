@@ -1,0 +1,265 @@
+﻿<Window x:Class="Chat_Group_System.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Chat_Group_System"
+        mc:Ignorable="d"
+        Title="NexChat" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen" FontFamily="Segoe UI, Inter"
+        Background="#FFFFFF">
+    
+    <Window.Resources>
+        <!-- Converter To Detect If Message Is Self -->
+        <local:UserIdToAlignmentConverter x:Key="UserIdToAlignmentConverter" />
+        <local:UserIdToBackgroundConverter x:Key="UserIdToBackgroundConverter" />
+        <local:UserIdToForegroundConverter x:Key="UserIdToForegroundConverter" />
+        <local:NullOrWhiteSpaceToCollapsedConverter x:Key="NullOrWhiteSpaceToCollapsedConverter" />
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Sidebar -->
+            <ColumnDefinition Width="195"/>
+            <!-- Chat Area -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ============================================== -->
+        <!-- SIDEBAR (195px fixed width)                     -->
+        <!-- ============================================== -->
+        <Border Grid.Column="0" Background="#F8F7F3" BorderBrush="#E8E7E3" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Header / Logo -->
+                    <RowDefinition Height="Auto"/> <!-- Search -->
+                    <RowDefinition Height="*"/>    <!-- List -->
+                </Grid.RowDefinitions>
+
+                <!-- Logo & Add Button -->
+                <Grid Grid.Row="0" Margin="16,20,16,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🔷" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="NexChat" FontSize="18" FontWeight="Bold" Foreground="#1A1A1A" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="+" Background="Transparent" Foreground="#6B6B6B" BorderThickness="0" FontSize="18" Cursor="Hand" ToolTip="New Chat"/>
+                </Grid>
+
+                <!-- Search Box -->
+                <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#E8E7E3" BorderThickness="1" CornerRadius="6" Margin="16,0,16,16" Padding="10,0" Height="36">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="🔍" Foreground="#9A9A9A" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txtSearch" Grid.Column="1" Text="Search..." Foreground="#9A9A9A" Background="Transparent" BorderThickness="0" FontSize="13" VerticalAlignment="Center" FocusVisualStyle="{x:Null}" GotFocus="TxtSearch_GotFocus" LostFocus="TxtSearch_LostFocus" TextChanged="TxtSearch_TextChanged"/>
+                    </Grid>
+                </Border>
+
+                <!-- Conversations List (Scrollable) -->
+                <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10,0">
+                        <!-- GROUP CHATS SECTION -->
+                        <TextBlock Text="CHATS" FontSize="10" FontWeight="SemiBold" Foreground="#9A9A9A" Margin="6,10,0,8"/>
+                        
+                        <ListBox x:Name="ConvList" ItemsSource="{Binding ConversationsView}" SelectedItem="{Binding SelectedConversation, Mode=TwoWay}" 
+                                 Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="ConvList_SelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Margin" Value="0,0,0,2"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,8">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="#3B3A8B"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsSelected" Value="False"/>
+                                                            <Condition Property="IsMouseOver" Value="True"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Background" Value="#EAE6DF"/>
+                                                    </MultiTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="36"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid Grid.Column="0">
+                                            <Ellipse Width="36" Height="36" Fill="#E8E8E8"/>
+                                            <TextBlock Text="{Binding Name[0]}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#3B3A8B" FontSize="14" FontWeight="SemiBold"/>
+                                        </Grid>
+                                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#3D3D3D"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Type}" FontSize="11" Margin="0,2,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#9A9A9A"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                                                <Setter Property="Foreground" Value="#EEEDF8"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- ============================================== -->
+        <!-- CHAT AREA                                       -->
+        <!-- ============================================== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="64"/> <!-- Chat Header -->
+                <RowDefinition Height="*"/>  <!-- Message List -->
+                <RowDefinition Height="Auto"/> <!-- Input Area -->
+            </Grid.RowDefinitions>
+
+            <!-- 1) Chat Header -->
+            <Border Grid.Row="0" Background="#FAFAFA" BorderBrush="#E8E7E3" BorderThickness="0,0,0,1" Padding="20,0" DataContext="{Binding SelectedConversation}">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="40" Height="40" Fill="#4F4EAA"/>
+                        <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold" Foreground="#1A1A1A"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                <Ellipse Width="8" Height="8" Fill="#22C55E" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Type}" FontSize="12" Foreground="#6B6B6B" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Header Icons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="🔔" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="16" Margin="0,0,15,0" Cursor="Hand"/>
+                        <Button Content="⋯" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="16" Cursor="Hand"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 2) Message Bubble Area -->
+            <ScrollViewer x:Name="MessageScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" Background="#FFFFFF">
+                <ItemsControl x:Name="MessageList" ItemsSource="{Binding CurrentMessages}" Margin="25" VerticalAlignment="Bottom">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,16" HorizontalAlignment="{Binding SenderId, Converter={StaticResource UserIdToAlignmentConverter}}">
+                                <!-- Text Bubble content -->
+                                <Border Background="{Binding SenderId, Converter={StaticResource UserIdToBackgroundConverter}}" Padding="14,10" CornerRadius="16,16,16,4" MaxWidth="500" Visibility="{Binding Content, Converter={StaticResource NullOrWhiteSpaceToCollapsedConverter}}">
+                                    <TextBlock Text="{Binding Content}" FontSize="14" Foreground="{Binding SenderId, Converter={StaticResource UserIdToForegroundConverter}}" TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Attachments -->
+                                <ItemsControl ItemsSource="{Binding Attachments}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{Binding DataContext.SenderId, RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=1}, Converter={StaticResource UserIdToBackgroundConverter}}" Padding="10" CornerRadius="8" MaxWidth="500" Margin="0,2,0,2">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <!-- Icon -->
+                                                    <Border Grid.Column="0" Background="#4F4EAA" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                                        <TextBlock Text="📄" FontSize="20"/>
+                                                    </Border>
+                                                    
+                                                    <!-- File Info -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
+                                                        <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="Medium" Foreground="{Binding DataContext.SenderId, RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}, Converter={StaticResource UserIdToForegroundConverter}}" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding SizeBytes, StringFormat={}{0} bytes · Click to open}" FontSize="11" Foreground="{Binding DataContext.SenderId, RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}, Converter={StaticResource UserIdToForegroundConverter}}" Opacity="0.8"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                
+                                <!-- Timestamp -->
+                                <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:hh:mm tt}}" FontSize="11" Foreground="#9A9A9A" Margin="14,4,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- 3) Input Area -->
+            <Border Grid.Row="2" Background="#F5F4F0" BorderBrush="#E8E7E3" BorderThickness="0,1,0,0" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/> <!-- Tools -->
+                        <ColumnDefinition Width="*"/>    <!-- TextBox -->
+                        <ColumnDefinition Width="Auto"/> <!-- Send -->
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tools -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                        <Button Content="😊" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand"/>
+                        <Button x:Name="btnSelectFile" Content="📎" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand" Click="BtnSelectFile_Click"/>
+                        <Button x:Name="btnSelectImage" Content="🖼" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Cursor="Hand" Click="BtnSelectImage_Click"/>
+                    </StackPanel>
+
+                    <!-- Text input -->
+                    <TextBox x:Name="txtInputMessage" Text="Nhập tin nhắn..." Foreground="#9A9A9A" Background="Transparent" BorderThickness="0" FontSize="14" VerticalAlignment="Center" FocusVisualStyle="{x:Null}" KeyDown="TxtInputMessage_KeyDown" GotFocus="TxtInputMessage_GotFocus" LostFocus="TxtInputMessage_LostFocus"/>
+
+                    <!-- Send Button -->
+                    <Button x:Name="btnSend" Click="BtnSend_Click" Grid.Column="2" MinWidth="75" Height="36" Cursor="Hand" Margin="15,0,0,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#3B3A8B" CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
+                                        <TextBlock Text="Gửi" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13" Margin="0,0,6,0"/>
+                                        <TextBlock Text="➤" Foreground="#FFFFFF" FontSize="10" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

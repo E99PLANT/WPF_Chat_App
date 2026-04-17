@@ -1,0 +1,26 @@
+## Visual Studio Ignore
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+
+## .NET Core Ignore
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS Ignore
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## EF Core Ignore
+*.db-shm
+*.db-wal
+
+## User specific
+appsettings.Local.json
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
