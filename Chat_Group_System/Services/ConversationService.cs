@@ -32,7 +32,7 @@ namespace Chat_Group_System.Services
             {
                 Name = groupName,
                 Type = ConversationType.Group,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow.AddHours(7)
             };
 
             var allMembers = memberIds.ToList();
@@ -56,7 +56,7 @@ namespace Chat_Group_System.Services
             {
                 Name = null, // DM has no explicitly set name, derived from user
                 Type = ConversationType.DirectMessage,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow.AddHours(7)
             };
 
             return await _conversationRepository.AddAsync(conversation, new[] { user1Id, user2Id });
@@ -68,9 +68,70 @@ namespace Chat_Group_System.Services
             if (conversation != null)
             {
                 conversation.LastMessagePreview = previewText;
-                conversation.LastMessageAt = DateTime.UtcNow;
+                conversation.LastMessageAt = DateTime.UtcNow.AddHours(7);
                 await _conversationRepository.UpdateAsync(conversation);
             }
+        }
+
+        public async Task AddMemberToGroupAsync(int conversationId, int currentUserId, int newMemberId)
+        {
+            var members = await _conversationRepository.GetMembersAsync(conversationId);
+            var currentUserMember = members.FirstOrDefault(m => m.UserId == currentUserId);
+            
+            if (currentUserMember == null || currentUserMember.Role != "Admin")
+            {
+                throw new UnauthorizedAccessException("Only Admins can add members.");
+            }
+
+            if (members.Any(m => m.UserId == newMemberId))
+            {
+                throw new InvalidOperationException("User is already a member.");
+            }
+
+            await _conversationRepository.AddMemberAsync(conversationId, newMemberId, "Member");
+        }
+
+        public async Task RemoveMemberFromGroupAsync(int conversationId, int currentUserId, int memberToRemoveId)
+        {
+            var members = await _conversationRepository.GetMembersAsync(conversationId);
+            var currentUserMember = members.FirstOrDefault(m => m.UserId == currentUserId);
+
+            if (currentUserMember == null || currentUserMember.Role != "Admin")
+            {
+                throw new UnauthorizedAccessException("Only Admins can remove members.");
+            }
+
+            if (currentUserId == memberToRemoveId)
+            {
+                throw new InvalidOperationException("Use LeaveGroup to leave the conversation.");
+            }
+
+            await _conversationRepository.RemoveMemberAsync(conversationId, memberToRemoveId);
+        }
+
+        public async Task LeaveOrDisbandGroupAsync(int conversationId, int currentUserId)
+        {
+            var members = await _conversationRepository.GetMembersAsync(conversationId);
+            var currentUserMember = members.FirstOrDefault(m => m.UserId == currentUserId);
+
+            if (currentUserMember == null)
+            {
+                throw new InvalidOperationException("User is not a member of this conversation.");
+            }
+
+            if (currentUserMember.Role == "Admin")
+            {
+                await _conversationRepository.DeleteConversationAsync(conversationId);
+            }
+            else
+            {
+                await _conversationRepository.RemoveMemberAsync(conversationId, currentUserId);
+            }
+        }
+
+        public async Task<IEnumerable<ConversationMember>> GetGroupMembersAsync(int conversationId)
+        {
+            return await _conversationRepository.GetMembersAsync(conversationId);
         }
     }
 }

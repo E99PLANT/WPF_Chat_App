@@ -43,7 +43,7 @@ namespace Chat_Group_System.Models.Entities
         public int? ImageWidth { get; set; }
         public int? ImageHeight { get; set; }
 
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow.AddHours(7);
 
         // ── Navigation ────────────────────────────────────────
         public Message Message { get; set; } = null!;

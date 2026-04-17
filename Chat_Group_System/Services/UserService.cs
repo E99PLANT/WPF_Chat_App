@@ -40,8 +40,8 @@ namespace Chat_Group_System.Services
                 PasswordHash = HashPassword(password),
                 Role = "Member",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow.AddHours(7),
+                UpdatedAt = DateTime.UtcNow.AddHours(7)
             };
 
             await _userRepository.AddAsync(user);
@@ -56,7 +56,7 @@ namespace Chat_Group_System.Services
             if (user.PasswordHash != HashPassword(currentPassword)) return false;
 
             user.PasswordHash = HashPassword(newPassword);
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             await _userRepository.UpdateAsync(user);
             return true;
@@ -65,6 +65,11 @@ namespace Chat_Group_System.Services
         public async Task<User?> GetUserByIdAsync(int id)
         {
             return await _userRepository.GetByIdAsync(id);
+        }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await _userRepository.GetByEmailAsync(email);
         }
 
         // Mock hashing method - In real usage, replace with BCrypt.Net.BCrypt.HashPassword

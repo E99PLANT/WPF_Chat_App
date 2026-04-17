@@ -68,6 +68,7 @@ namespace Chat_Group_System
             services.AddTransient<Views.LoginWindow>();
             services.AddTransient<Views.RegisterWindow>();
             services.AddTransient<Views.ChangePasswordWindow>();
+            services.AddTransient<Views.GroupSettingsWindow>();
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Chat_Group_System.Models.Entities
         public int UserId { get; set; }
 
         /// <summary>Thời điểm user mở/đọc message này.</summary>
-        public DateTime ReadAt { get; set; } = DateTime.UtcNow;
+        public DateTime ReadAt { get; set; } = DateTime.UtcNow.AddHours(7);
 
         // ── Navigation ────────────────────────────────────────
         public Message Message { get; set; } = null!;

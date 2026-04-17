@@ -65,8 +65,13 @@
                 <TextBlock Text="EMAIL" FontSize="10" FontWeight="SemiBold" Foreground="#6B6B6B" Margin="0,0,0,5"/>
                 <TextBox x:Name="txtEmail" Margin="0,0,0,15"/>
 
-                <TextBlock Text="PASSWORD" FontSize="10" FontWeight="SemiBold" Foreground="#6B6B6B" Margin="0,0,0,5"/>
-                <PasswordBox x:Name="txtPassword" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,5">
+                    <PasswordBox x:Name="txtPassword" Padding="10,0,35,0"/>
+                    <TextBox x:Name="txtVisiblePassword" Visibility="Collapsed" Padding="10,0,35,0"/>
+                    <ToggleButton x:Name="btnTogglePassword" HorizontalAlignment="Right" Width="30" Height="40" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnTogglePassword_Click">
+                        <TextBlock Text="👁" FontSize="16" Foreground="#9A9A9A"/>
+                    </ToggleButton>
+                </Grid>
 
                 <TextBlock x:Name="btnForgotPassword" Text="Forgot password?" Foreground="#6B6B6B" FontSize="12" Margin="0,0,0,25" HorizontalAlignment="Right" Cursor="Hand" MouseDown="BtnForgotPassword_MouseDown"/>
 

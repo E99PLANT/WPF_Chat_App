@@ -141,7 +141,7 @@ namespace Chat_Group_System
                         ConversationId = conversationId, 
                         SenderId = senderId, 
                         Content = content,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow.AddHours(7)
                     });
                     
                     // UI sẽ tự động update nếu bạn xài ListBox/ItemsControl binding với CurrentMessages
@@ -170,7 +170,35 @@ namespace Chat_Group_System
             });
         }
 
-        // ── Input & Send Actions ───────────────────────────────
+        // ── Actions ───────────────────────────────────────────
+        private void BtnGroupSettings_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedConversation == null)
+            {
+                MessageBox.Show("Please select a conversation first.");
+                return;
+            }
+
+            if (SelectedConversation.Type != Models.Entities.ConversationType.Group)
+            {
+                MessageBox.Show("Settings are only available for group conversations.");
+                return;
+            }
+
+            var groupSettingsWindow = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Views.GroupSettingsWindow>(App.ServiceProvider);
+            groupSettingsWindow.SetConversation(SelectedConversation);
+            groupSettingsWindow.Owner = this;
+            
+            bool? result = groupSettingsWindow.ShowDialog();
+            if (result == true)
+            {
+                // If user leaves or disbands group, remove conversation from UI
+                Conversations.Remove(SelectedConversation);
+                SelectedConversation = null;
+                CurrentMessages.Clear();
+            }
+        }
+        
         private async void BtnSend_Click(object sender, RoutedEventArgs e)
         {
             await SendMessageAction();
@@ -210,7 +238,12 @@ namespace Chat_Group_System
 
         private async void BtnSelectFile_Click(object sender, RoutedEventArgs e)
         {
-            if (App.CurrentUser == null || SelectedConversation == null) return;
+            if (App.CurrentUser == null) return;
+            if (SelectedConversation == null)
+            {
+                MessageBox.Show("Vui lòng chọn một cuộc trò chuyện trước khi gửi file đính kèm.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select a file to send";
@@ -232,7 +265,12 @@ namespace Chat_Group_System
 
         private async void BtnSelectImage_Click(object sender, RoutedEventArgs e)
         {
-            if (App.CurrentUser == null || SelectedConversation == null) return;
+            if (App.CurrentUser == null) return;
+            if (SelectedConversation == null)
+            {
+                MessageBox.Show("Vui lòng chọn một cuộc trò chuyện trước khi đính kèm hình ảnh.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select an image to send";
@@ -248,6 +286,29 @@ namespace Chat_Group_System
                 else
                 {
                     MessageBox.Show(result.Message, "Error Sending Image", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void BtnNewChat_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.CurrentUser == null) return;
+
+            var createGroupWin = new Views.CreateGroupWindow();
+            createGroupWin.Owner = this;
+            if (createGroupWin.ShowDialog() == true)
+            {
+                string groupName = createGroupWin.GroupName;
+
+                var result = await _chatController.CreateGroupAsync(App.CurrentUser.Id, groupName, new System.Collections.Generic.List<int>());
+                if (result.Success && result.Group != null)
+                {
+                    Conversations.Add(result.Group);
+                    SelectedConversation = result.Group;
+                }
+                else
+                {
+                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

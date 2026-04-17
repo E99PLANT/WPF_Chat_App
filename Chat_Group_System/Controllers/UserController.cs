@@ -79,5 +79,15 @@ namespace Chat_Group_System.Controllers
                 return (false, $"An error occurred: {ex.Message}");
             }
         }
+
+        public async Task<User?> GetUserByIdAsync(int id)
+        {
+            return await _userService.GetUserByIdAsync(id);
+        }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await _userService.GetUserByEmailAsync(email);
+        }
     }
 }

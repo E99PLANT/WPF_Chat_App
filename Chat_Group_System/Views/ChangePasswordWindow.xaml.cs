@@ -1,5 +1,7 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using Chat_Group_System.Controllers;
 
 namespace Chat_Group_System.Views
@@ -22,9 +24,9 @@ namespace Chat_Group_System.Views
                 return;
             }
 
-            string currentPassword = txtCurrentPassword.Password;
-            string newPassword = txtNewPassword.Password;
-            string confirmNewPassword = txtConfirmNewPassword.Password;
+            string currentPassword = btnToggleCurrentPassword.IsChecked == true ? txtVisibleCurrentPassword.Text : txtCurrentPassword.Password;
+            string newPassword = btnToggleNewPassword.IsChecked == true ? txtVisibleNewPassword.Text : txtNewPassword.Password;
+            string confirmNewPassword = btnToggleConfirmNewPassword.IsChecked == true ? txtVisibleConfirmNewPassword.Text : txtConfirmNewPassword.Password;
 
             var result = await _userController.ChangePasswordAsync(App.CurrentUser.Id, currentPassword, newPassword, confirmNewPassword);
 
@@ -54,6 +56,39 @@ namespace Chat_Group_System.Views
             var loginWindow = App.ServiceProvider.GetRequiredService<LoginWindow>();
             loginWindow.Show();
             this.Close();
+        }
+
+        private void BtnToggleCurrentPassword_Click(object sender, RoutedEventArgs e)
+        {
+            TogglePasswordVisibility(btnToggleCurrentPassword, txtCurrentPassword, txtVisibleCurrentPassword);
+        }
+
+        private void BtnToggleNewPassword_Click(object sender, RoutedEventArgs e)
+        {
+            TogglePasswordVisibility(btnToggleNewPassword, txtNewPassword, txtVisibleNewPassword);
+        }
+
+        private void BtnToggleConfirmNewPassword_Click(object sender, RoutedEventArgs e)
+        {
+            TogglePasswordVisibility(btnToggleConfirmNewPassword, txtConfirmNewPassword, txtVisibleConfirmNewPassword);
+        }
+
+        private void TogglePasswordVisibility(ToggleButton btn, PasswordBox pb, TextBox tb)
+        {
+            if (btn.IsChecked == true)
+            {
+                tb.Text = pb.Password;
+                pb.Visibility = Visibility.Collapsed;
+                tb.Visibility = Visibility.Visible;
+                ((TextBlock)btn.Content).Text = "🙈";
+            }
+            else
+            {
+                pb.Password = tb.Text;
+                tb.Visibility = Visibility.Collapsed;
+                pb.Visibility = Visibility.Visible;
+                ((TextBlock)btn.Content).Text = "👁";
+            }
         }
     }
 }

@@ -53,7 +53,7 @@ namespace Chat_Group_System.Repositories
             {
                 ConversationId = conversation.Id,
                 UserId = id,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = DateTime.UtcNow.AddHours(7),
                 Role = "Member" // Or Admin if they created it
             });
 
@@ -67,6 +67,48 @@ namespace Chat_Group_System.Repositories
         {
             _context.Conversations.Update(conversation);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddMemberAsync(int conversationId, int userId, string role)
+        {
+            var member = new ConversationMember
+            {
+                ConversationId = conversationId,
+                UserId = userId,
+                Role = role,
+                JoinedAt = DateTime.UtcNow.AddHours(7)
+            };
+            await _context.ConversationMembers.AddAsync(member);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveMemberAsync(int conversationId, int userId)
+        {
+            var member = await _context.ConversationMembers
+                .FirstOrDefaultAsync(m => m.ConversationId == conversationId && m.UserId == userId);
+            if (member != null)
+            {
+                _context.ConversationMembers.Remove(member);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task DeleteConversationAsync(int conversationId)
+        {
+            var conversation = await _context.Conversations.FindAsync(conversationId);
+            if (conversation != null)
+            {
+                _context.Conversations.Remove(conversation);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<IEnumerable<ConversationMember>> GetMembersAsync(int conversationId)
+        {
+            return await _context.ConversationMembers
+                .Where(m => m.ConversationId == conversationId)
+                .Include(m => m.User)
+                .ToListAsync();
         }
     }
 }

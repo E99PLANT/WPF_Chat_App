@@ -48,7 +48,7 @@ namespace Chat_Group_System.Repositories
                 {
                     MessageId = messageId,
                     UserId = userId,
-                    ReadAt = DateTime.UtcNow
+                    ReadAt = DateTime.UtcNow.AddHours(7)
                 });
                 await _context.SaveChangesAsync();
             }

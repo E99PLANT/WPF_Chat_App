@@ -37,8 +37,8 @@ namespace Chat_Group_System.Models.Entities
         public DateTime? LastSeenAt { get; set; }
 
         // ── Timestamps ────────────────────────────────────────
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
 
         // ── Navigation ────────────────────────────────────────
         public ICollection<ConversationMember> ConversationMembers { get; set; } = new List<ConversationMember>();

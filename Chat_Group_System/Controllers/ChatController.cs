@@ -49,6 +49,64 @@ namespace Chat_Group_System.Controllers
             return await _conversationService.GetUserConversationsAsync(userId);
         }
 
+        public async Task<(bool Success, string Message, Conversation? Group)> CreateGroupAsync(int creatorId, string groupName, IEnumerable<int> memberIds)
+        {
+            try
+            {
+                var group = await _conversationService.CreateGroupChatAsync(creatorId, groupName, memberIds);
+                // Could broadcast a signal to users to refresh list
+                return (true, "Group created successfully", group);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to create group: {ex.Message}", null);
+            }
+        }
+
+        public async Task<(bool Success, string Message)> AddMemberToGroupAsync(int conversationId, int currentUserId, int newMemberId)
+        {
+            try
+            {
+                await _conversationService.AddMemberToGroupAsync(conversationId, currentUserId, newMemberId);
+                return (true, "Member added successfully");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        public async Task<(bool Success, string Message)> RemoveMemberFromGroupAsync(int conversationId, int currentUserId, int memberToRemoveId)
+        {
+            try
+            {
+                await _conversationService.RemoveMemberFromGroupAsync(conversationId, currentUserId, memberToRemoveId);
+                return (true, "Member removed successfully");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        public async Task<(bool Success, string Message)> LeaveOrDisbandGroupAsync(int conversationId, int currentUserId)
+        {
+            try
+            {
+                await _conversationService.LeaveOrDisbandGroupAsync(conversationId, currentUserId);
+                return (true, "Left/Disbanded successfully");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<ConversationMember>> GetGroupMembersAsync(int conversationId)
+        {
+            return await _conversationService.GetGroupMembersAsync(conversationId);
+        }
+
         // ── Messages ───────────────────────────────────────────
         public async Task<IEnumerable<Message>> GetRecentMessagesAsync(int conversationId)
         {

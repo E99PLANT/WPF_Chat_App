@@ -11,5 +11,9 @@ namespace Chat_Group_System.Services
         Task<Conversation> CreateGroupChatAsync(int creatorId, string groupName, IEnumerable<int> memberIds);
         Task<Conversation> CreateOrGetDirectMessageAsync(int user1Id, int user2Id);
         Task UpdateLastMessagePreviewAsync(int conversationId, string previewText);
+        Task AddMemberToGroupAsync(int conversationId, int currentUserId, int newMemberId);
+        Task RemoveMemberFromGroupAsync(int conversationId, int currentUserId, int memberToRemoveId);
+        Task LeaveOrDisbandGroupAsync(int conversationId, int currentUserId);
+        Task<IEnumerable<ConversationMember>> GetGroupMembersAsync(int conversationId);
     }
 }
