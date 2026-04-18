@@ -19,7 +19,7 @@ namespace Chat_Group_System.Repositories
 
         public async Task<IEnumerable<Message>> GetMessagesByConversationIdAsync(int conversationId, int skip = 0, int take = 50)
         {
-            return await _context.Messages
+            var messages = await _context.Messages
                 .Where(m => m.ConversationId == conversationId)
                 .Include(m => m.Sender)
                 .Include(m => m.Attachments)
@@ -28,6 +28,8 @@ namespace Chat_Group_System.Repositories
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();
+
+            return messages.OrderBy(m => m.CreatedAt);
         }
 
         public async Task<Message> AddMessageAsync(Message message)
@@ -48,7 +50,7 @@ namespace Chat_Group_System.Repositories
                 {
                     MessageId = messageId,
                     UserId = userId,
-                    ReadAt = DateTime.UtcNow.AddHours(7)
+                    ReadAt = Chat_Group_System.Helpers.TimeHelper.NowVN
                 });
                 await _context.SaveChangesAsync();
             }

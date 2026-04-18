@@ -10,10 +10,10 @@ namespace Chat_Group_System.Views
     {
         private readonly UserController _userController;
 
-        public RegisterWindow()
+        public RegisterWindow(UserController userController)
         {
             InitializeComponent();
-            _userController = App.ServiceProvider.GetRequiredService<UserController>();
+            _userController = userController;
         }
 
         private async void BtnRegister_Click(object sender, RoutedEventArgs e)

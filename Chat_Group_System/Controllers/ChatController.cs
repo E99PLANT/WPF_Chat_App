@@ -43,6 +43,21 @@ namespace Chat_Group_System.Controllers
             await _signalRService.DisconnectAsync();
         }
 
+        public async Task JoinGroupAsync(int conversationId)
+        {
+            await _signalRService.JoinGroupAsync(conversationId);
+        }
+
+        public async Task LeaveGroupAsync(int conversationId)
+        {
+            await _signalRService.LeaveGroupAsync(conversationId);
+        }
+
+        public async Task NotifyTypingAsync(int conversationId, string userName)
+        {
+            await _signalRService.NotifyTypingAsync(conversationId, userName);
+        }
+
         // ── Conversations ──────────────────────────────────────
         public async Task<IEnumerable<Conversation>> GetUserConversationsAsync(int userId)
         {
@@ -135,16 +150,21 @@ namespace Chat_Group_System.Controllers
         {
             try
             {
-                // Thực tế: Cần đẩy file lên Server/Cloud/S3 và lấy URL về.
-                // Ở đây mô phỏng lấy tên file và dùng đường dẫn file ở local.
                 string fileName = System.IO.Path.GetFileName(filePath);
                 long fileSize = new System.IO.FileInfo(filePath).Length;
 
                 // 1. Lưu vào Database
                 var savedMsg = await _messageService.SendAttachmentMessageAsync(conversationId, senderId, fileName, filePath, fileSize, type);
 
-                // 2. Broadcast (Sử dụng SignalR, gửi nội dung báo có file)
-                await _signalRService.SendMessageAsync(conversationId, senderId, "Sent an attachment: " + fileName);
+                // 2. Broadcast JSON payload
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Id = savedMsg.Id,
+                    Type = type,
+                    FileName = fileName,
+                    FileSize = fileSize,
+                    FilePath = filePath
+                });
+                await _signalRService.SendMessageAsync(conversationId, senderId, "[ATTACHMENT]" + payload);
 
                 return (true, "Attachment sent successfully", savedMsg);
             }

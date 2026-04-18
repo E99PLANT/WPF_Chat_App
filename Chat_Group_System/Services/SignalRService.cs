@@ -1,21 +1,27 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
 
 namespace Chat_Group_System.Services
 {
     public class SignalRService : ISignalRService
     {
         private HubConnection? _hubConnection;
+        private readonly string _hubUrlSettings;
 
         public event Action<int, int, string>? MessageReceived;
         public event Action<int, string>? UserTyping;
         public event Action<int, bool>? UserOnlineStatusChanged;
 
+        public SignalRService(IConfiguration config)
+        {
+            _hubUrlSettings = config["SignalR:HubUrl"] ?? "http://localhost:5000/chatHub";
+        }
+
         public async Task ConnectAsync(int userId)
         {
-            // Update this URL to match your actual SignalR server URL
-            var hubUrl = $"https://localhost:5001/chatHub?userId={userId}";
+            var hubUrl = $"{_hubUrlSettings}?userId={userId}";
 
             _hubConnection = new HubConnectionBuilder()
                 .WithUrl(hubUrl)
@@ -61,6 +67,22 @@ namespace Chat_Group_System.Services
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
                 await _hubConnection.InvokeAsync("SendMessage", conversationId, senderId, content);
+            }
+        }
+
+        public async Task JoinGroupAsync(int conversationId)
+        {
+            if (_hubConnection?.State == HubConnectionState.Connected)
+            {
+                await _hubConnection.InvokeAsync("JoinGroup", conversationId.ToString());
+            }
+        }
+
+        public async Task LeaveGroupAsync(int conversationId)
+        {
+            if (_hubConnection?.State == HubConnectionState.Connected)
+            {
+                await _hubConnection.InvokeAsync("LeaveGroup", conversationId.ToString());
             }
         }
 

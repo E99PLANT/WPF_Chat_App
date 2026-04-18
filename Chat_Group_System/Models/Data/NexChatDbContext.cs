@@ -147,8 +147,8 @@ namespace Chat_Group_System.Models.Data
             {
                 Id = 1,
                 Email = "admin@nexchat.local",
-                // BCrypt hash của "Admin@123" — thay bằng hash thật khi build
-                PasswordHash = "$2a$11$examplehashforadmin",
+                // Hardcoded hash for "Admin@123" to avoid re-generating on every migration
+                PasswordHash = "$2a$11$0dI.t3W0Z31/hG6K0C7hLuHov4b12wXpTf4i0V7W.J0.4l8YIuAem",
                 DisplayName = "NexChat Admin",
                 Role = "Admin",
                 IsActive = true,

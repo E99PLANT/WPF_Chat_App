@@ -38,13 +38,13 @@ namespace Chat_Group_System.Repositories
         public async Task<Conversation?> GetDirectMessageAsync(int userId1, int userId2)
         {
             return await _context.Conversations
-                .Where(c => c.Type == ConversationType.DirectMessage)
-                .FirstOrDefaultAsync(c => 
-                    c.Members.Any(m => m.UserId == userId1) && 
+                .Where(c => c.Type == ConversationType.DirectMessage && c.Members.Count == 2)
+                .FirstOrDefaultAsync(c =>
+                    c.Members.Any(m => m.UserId == userId1) &&
                     c.Members.Any(m => m.UserId == userId2));
         }
 
-        public async Task<Conversation> AddAsync(Conversation conversation, IEnumerable<int> participantIds)
+        public async Task<Conversation> AddAsync(Conversation conversation, IEnumerable<int> participantIds, int creatorId = 0)
         {
             await _context.Conversations.AddAsync(conversation);
             await _context.SaveChangesAsync();
@@ -53,8 +53,8 @@ namespace Chat_Group_System.Repositories
             {
                 ConversationId = conversation.Id,
                 UserId = id,
-                JoinedAt = DateTime.UtcNow.AddHours(7),
-                Role = "Member" // Or Admin if they created it
+                JoinedAt = Chat_Group_System.Helpers.TimeHelper.NowVN,
+                Role = (creatorId > 0 && id == creatorId) ? "Admin" : "Member" 
             });
 
             await _context.ConversationMembers.AddRangeAsync(members);
@@ -76,7 +76,7 @@ namespace Chat_Group_System.Repositories
                 ConversationId = conversationId,
                 UserId = userId,
                 Role = role,
-                JoinedAt = DateTime.UtcNow.AddHours(7)
+                JoinedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
             await _context.ConversationMembers.AddAsync(member);
             await _context.SaveChangesAsync();

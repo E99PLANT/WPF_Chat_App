@@ -18,7 +18,7 @@ namespace Chat_Group_System.Models.Entities
         public string Role { get; set; } = "Member";
 
         /// <summary>Thời điểm được thêm vào group.</summary>
-        public DateTime JoinedAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime JoinedAt { get; set; } = Chat_Group_System.Helpers.TimeHelper.NowVN;
 
         /// <summary>
         /// Số tin nhắn chưa đọc trong conversation này — cache để hiện badge đỏ.
@@ -39,3 +39,4 @@ namespace Chat_Group_System.Models.Entities
         public User User { get; set; } = null!;
     }
 }
+

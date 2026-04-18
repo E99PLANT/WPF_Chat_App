@@ -339,7 +339,7 @@ namespace Chat_Group_System.Migrations
                             Email = "admin@nexchat.local",
                             IsActive = true,
                             IsOnline = false,
-                            PasswordHash = "$2a$11$examplehashforadmin",
+                            PasswordHash = "$2a$11$0dI.t3W0Z31/hG6K0C7hLuHov4b12wXpTf4i0V7W.J0.4l8YIuAem",
                             Role = "Admin",
                             UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });

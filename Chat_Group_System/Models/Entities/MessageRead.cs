@@ -15,10 +15,11 @@ namespace Chat_Group_System.Models.Entities
         public int UserId { get; set; }
 
         /// <summary>Thời điểm user mở/đọc message này.</summary>
-        public DateTime ReadAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime ReadAt { get; set; } = Chat_Group_System.Helpers.TimeHelper.NowVN;
 
         // ── Navigation ────────────────────────────────────────
         public Message Message { get; set; } = null!;
         public User User { get; set; } = null!;
     }
 }
+

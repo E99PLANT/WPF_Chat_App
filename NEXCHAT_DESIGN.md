@@ -458,7 +458,7 @@ Themes/
 
 ---
 
-## 📋 Implementation Checklist
+## 📋 Implementation Checklist *(Original)*
 
 ### Phase 1 — Foundation
 - [ ] Setup WPF project + MVVM framework (CommunityToolkit.Mvvm)
@@ -498,15 +498,130 @@ Themes/
 
 ---
 
+## 📊 Implementation Status *(cập nhật 2026-04-18)*
+
+### Phase 1 — Foundation
+- [x] Setup WPF project + DI Container (`App.xaml.cs`)
+- [x] Layout 3 vùng `Grid` với `ColumnDefinition` (195px + `*`)
+- [x] `ViewModels/` tách biệt dùng `CommunityToolkit.Mvvm` `[ObservableProperty]`
+- [ ] Resource Dictionaries (`Colors.xaml`, `Typography.xaml`, `Animations.xaml`) — **chưa tạo, màu vẫn hardcode trong XAML**
+
+### Phase 2 — Sidebar
+- [x] `ListBox` với `ItemContainerStyle` active highlight (`#3B3A8B`)
+- [x] Section label (CHATS)
+- [x] Search box với `ICollectionView` filter + `OnSearchTextChanged`
+- [x] `ConversationViewModel.UnreadCount` — tăng badge khi nhận tin từ group nền
+- [x] `ConversationViewModel.LastMessagePreview` — cập nhật khi nhận tin mới
+- [ ] Online dot (🟢/⚫) trên avatar — **chưa có UI**
+- [ ] Unread badge đỏ hiển thị con số trên item — **chưa có UI**
+
+### Phase 3 — Chat Area
+- [x] ChatHeader — tên conversation, action icons (🔔, ⋯)
+- [x] `MessageBubble` cơ bản — Text + File attachment
+- [x] `MessageTemplateSelector.cs` — `DataTemplateSelector` cho Self / Other ⚠️ *(xem Known Issues #2)*
+- [x] Auto-scroll khi có tin mới (`Dispatcher.InvokeAsync`)
+- [x] Typing indicator **state** (`IsTyping`, `TypingMessage` binding hoạt động)
+- [ ] Typing indicator **UI** (3 chấm bounce animation XAML) — **chưa có**
+- [ ] Bubble `CornerRadius` đúng Self (`16,16,4,16`) / Other (`16,16,16,4`) — **chưa áp trong XAML**
+- [ ] Sender name hiển thị trong bubble (Group chat)
+
+### Phase 4 — Input Area
+- [x] `TextBox` placeholder bằng `GotFocus`/`LostFocus`
+- [x] Toolbar icons: File 📎, Image 🖼 (có handler đầy đủ)
+- [x] Send on Enter, Shift+Enter = newline
+- [ ] Emoji Picker 😊 — **button có, handler trống**
+- [ ] Bold / Italic / Strikethrough — **chưa có**
+
+### Phase 5 — SignalR Integration
+- [x] `SignalRService` — connect / disconnect với `WithAutomaticReconnect()`
+- [x] HubUrl đọc từ `appsettings.json` — **đã fix hardcode**
+- [x] Subscribe: `ReceiveMessage`, `UserTyping`, `UserOnlineStatus`
+- [x] Invoke: `SendMessage`, `JoinGroup`, `LeaveGroup`, `NotifyTyping`
+- [x] Typing debounce 1.5s bằng timestamp trong `OnInputTextChanged`
+- [x] `JoinGroup` + `LeaveGroup` tự invoke khi `OnSelectedConversationChanged`
+- [ ] `MessageRead` subscribe + broadcast — **chưa implement**
+
+### Phase 6 — Polish
+- [ ] Slide-in Storyboard animation cho bubble mới
+- [ ] Read receipt (✓ → ✓✓ → xanh) hiển thị UI
+- [ ] Notification sound khi có tin ngoài focus
+- [ ] Window title badge `[3] NexChat`
+
+---
+
+## 🐛 Known Issues *(cần fix)*
+
+### 🔴 Issue 1: Double Event Subscription — tin nhắn đến xử lý 2 lần
+
+**Files:** `MainViewModel.cs` dòng 50–52 và `MainWindow.xaml.cs` dòng 36–38
+
+```csharp
+// MainViewModel.cs constructor — subscriber #1
+_chatController.OnMessageReceived += ChatController_OnMessageReceived;
+
+// MainWindow.xaml.cs MainWindow_Loaded — subscriber #2 (THỪA)
+_chatController.OnMessageReceived += ChatController_OnMessageReceived;
+```
+
+**Fix:** Xóa 3 dòng subscription trong `MainWindow.MainWindow_Loaded`, để `MainViewModel` tự handle toàn bộ.
+
+---
+
+### 🔴 Issue 2: `MessageTemplateSelector` cast sai type
+
+**File:** `MessageTemplateSelector.cs` dòng 14
+
+```csharp
+// SAI — item là MessageViewModel nhưng cast thành Message
+if (item is Message message && App.CurrentUser != null)
+
+// ĐÚNG — cast sang MessageViewModel
+if (item is MessageViewModel message && App.CurrentUser != null)
+{
+    return message.IsSelf ? SelfMessageTemplate : OtherMessageTemplate;
+}
+```
+
+**Hậu quả:** Selector luôn fall-through → tất cả bubble dùng default template, Self/Other không phân biệt được về `CornerRadius` và layout.
+
+---
+
+### 🟡 Issue 3: `MainViewModel` không unsubscribe event khi Window đóng
+
+**Fix:** Unsubscribe trong `MainWindow.MainWindow_Closed`:
+
+```csharp
+private async void MainWindow_Closed(object? sender, EventArgs e)
+{
+    _chatController.OnMessageReceived -= ViewModel./* handler method */;
+    _chatController.OnUserTyping -= ...;
+    _chatController.OnUserOnlineStatusChanged -= ...;
+    await _chatController.DisconnectRealtimeAsync();
+}
+```
+
+---
+
+### 🟡 Issue 4: SHA256 không có salt
+
+`UserService.HashPassword` dùng SHA256 thuần — đủ cho demo assignment, không production-safe.
+
+**Upgrade sau:** Cài `BCrypt.Net-Next` và dùng `BCrypt.Net.BCrypt.HashPassword()`.
+
+---
+
 ## 🔌 Dependencies
 
 | Package | Version | Dùng cho |
 |---------|---------|----------|
 | `Microsoft.AspNetCore.SignalR.Client` | 8.x | Real-time SignalR |
-| `CommunityToolkit.Mvvm` | 8.x | MVVM, ObservableObject, RelayCommand |
+| `CommunityToolkit.Mvvm` | 8.x | `ObservableObject`, `[ObservableProperty]`, `RelayCommand` |
 | `Microsoft.Extensions.DependencyInjection` | 8.x | DI container |
-| `Newtonsoft.Json` | 13.x | JSON serialization |
+| `Microsoft.Extensions.Configuration` | 8.x | Đọc `appsettings.json` (HubUrl) |
+| `Microsoft.EntityFrameworkCore.SqlServer` | 8.x | Code First — SQL Server |
+| `System.Text.Json` | built-in | Parse attachment metadata JSON từ SignalR |
+| `Newtonsoft.Json` | 13.x | JSON serialization (dự phòng) |
 
 ---
 
-*Last updated: 2026-04-17 · NexChat WPF Design Spec v1.0*
+*Last updated: 2026-04-18 · NexChat WPF Design Spec v1.1 — cập nhật Implementation Status & Known Issues*

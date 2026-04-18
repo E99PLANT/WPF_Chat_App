@@ -30,7 +30,7 @@ namespace Chat_Group_System.Services
                 SenderId = senderId,
                 Content = content,
                 Type = MessageType.Text,
-                CreatedAt = DateTime.UtcNow.AddHours(7)
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
 
             var savedMessage = await _messageRepository.AddMessageAsync(msg);
@@ -47,18 +47,18 @@ namespace Chat_Group_System.Services
                 SenderId = senderId,
                 Type = type,
                 Content = null, // text is null for pure attachment message
-                CreatedAt = DateTime.UtcNow.AddHours(7),
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN,
                 Attachments = new List<Attachment>
                 {
                     new Attachment
                     {
                         FileName = fileName,
-                        StoredFileName = fileName,
+                        StoredFileName = $"{Guid.NewGuid()}_{fileName}",
                         FileUrl = fileUrl,
                         SizeBytes = fileSize,
                         MimeType = type == MessageType.Image ? "image/jpeg" : "application/octet-stream",
                         Type = type == MessageType.Image ? AttachmentType.Image : AttachmentType.File,
-                        UploadedAt = DateTime.UtcNow.AddHours(7)
+                        UploadedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
                     }
                 }
             };

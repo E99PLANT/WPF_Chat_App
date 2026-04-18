@@ -32,7 +32,7 @@ namespace Chat_Group_System.Services
             {
                 Name = groupName,
                 Type = ConversationType.Group,
-                CreatedAt = DateTime.UtcNow.AddHours(7)
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
 
             var allMembers = memberIds.ToList();
@@ -41,7 +41,7 @@ namespace Chat_Group_System.Services
                 allMembers.Add(creatorId);
             }
 
-            return await _conversationRepository.AddAsync(conversation, allMembers);
+            return await _conversationRepository.AddAsync(conversation, allMembers, creatorId);
         }
 
         public async Task<Conversation> CreateOrGetDirectMessageAsync(int user1Id, int user2Id)
@@ -56,7 +56,7 @@ namespace Chat_Group_System.Services
             {
                 Name = null, // DM has no explicitly set name, derived from user
                 Type = ConversationType.DirectMessage,
-                CreatedAt = DateTime.UtcNow.AddHours(7)
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
 
             return await _conversationRepository.AddAsync(conversation, new[] { user1Id, user2Id });
@@ -68,7 +68,7 @@ namespace Chat_Group_System.Services
             if (conversation != null)
             {
                 conversation.LastMessagePreview = previewText;
-                conversation.LastMessageAt = DateTime.UtcNow.AddHours(7);
+                conversation.LastMessageAt = Chat_Group_System.Helpers.TimeHelper.NowVN;
                 await _conversationRepository.UpdateAsync(conversation);
             }
         }

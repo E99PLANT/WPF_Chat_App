@@ -43,7 +43,7 @@ namespace Chat_Group_System.Models.Entities
         public int? ImageWidth { get; set; }
         public int? ImageHeight { get; set; }
 
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime UploadedAt { get; set; } = Chat_Group_System.Helpers.TimeHelper.NowVN;
 
         // ── Navigation ────────────────────────────────────────
         public Message Message { get; set; } = null!;
@@ -56,3 +56,4 @@ namespace Chat_Group_System.Models.Entities
         Video = 2
     }
 }
+

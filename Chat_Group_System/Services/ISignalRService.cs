@@ -12,6 +12,8 @@ namespace Chat_Group_System.Services
 
         Task ConnectAsync(int userId);
         Task DisconnectAsync();
+        Task JoinGroupAsync(int conversationId);
+        Task LeaveGroupAsync(int conversationId);
         Task SendMessageAsync(int conversationId, int senderId, string content);
         Task NotifyTypingAsync(int conversationId, string userName);
     }

@@ -41,7 +41,7 @@ namespace Chat_Group_System.Models.Entities
         public DateTime? DeletedAt { get; set; }
 
         // ── Timestamps ────────────────────────────────────────
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime CreatedAt { get; set; } = Chat_Group_System.Helpers.TimeHelper.NowVN;
         public DateTime? EditedAt { get; set; }
 
         // ── Navigation ────────────────────────────────────────
@@ -72,3 +72,4 @@ namespace Chat_Group_System.Models.Entities
         Read = 2
     }
 }
+

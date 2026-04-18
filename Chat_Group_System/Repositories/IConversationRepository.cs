@@ -9,7 +9,7 @@ namespace Chat_Group_System.Repositories
         Task<IEnumerable<Conversation>> GetUserConversationsAsync(int userId);
         Task<Conversation?> GetByIdAsync(int id);
         Task<Conversation?> GetDirectMessageAsync(int userId1, int userId2);
-        Task<Conversation> AddAsync(Conversation conversation, IEnumerable<int> participantIds);
+        Task<Conversation> AddAsync(Conversation conversation, IEnumerable<int> participantIds, int creatorId = 0);
         Task UpdateAsync(Conversation conversation);
         Task AddMemberAsync(int conversationId, int userId, string role);
         Task RemoveMemberAsync(int conversationId, int userId);

@@ -27,7 +27,7 @@ namespace Chat_Group_System.Models.Entities
 
         public DateTime? LastMessageAt { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
+        public DateTime CreatedAt { get; set; } = Chat_Group_System.Helpers.TimeHelper.NowVN;
 
         public bool IsActive { get; set; } = true;
 
@@ -42,3 +42,4 @@ namespace Chat_Group_System.Models.Entities
         DirectMessage = 1
     }
 }
+

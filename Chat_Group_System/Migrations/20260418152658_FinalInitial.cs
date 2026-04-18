@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Chat_Group_System.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class FinalInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -187,7 +187,7 @@ namespace Chat_Group_System.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarUrl", "CreatedAt", "DisplayName", "Email", "IsActive", "IsOnline", "LastSeenAt", "PasswordHash", "Role", "UpdatedAt" },
-                values: new object[] { 1, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "NexChat Admin", "admin@nexchat.local", true, false, null, "$2a$11$examplehashforadmin", "Admin", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) });
+                values: new object[] { 1, null, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "NexChat Admin", "admin@nexchat.local", true, false, null, "$2a$11$0dI.t3W0Z31/hG6K0C7hLuHov4b12wXpTf4i0V7W.J0.4l8YIuAem", "Admin", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc) });
 
             migrationBuilder.InsertData(
                 table: "ConversationMembers",

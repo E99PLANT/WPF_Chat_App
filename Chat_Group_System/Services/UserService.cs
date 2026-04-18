@@ -19,8 +19,7 @@ namespace Chat_Group_System.Services
             var user = await _userRepository.GetByEmailAsync(email);
             if (user == null || !user.IsActive) return null;
 
-            // Simple check for now. Later: return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash) ? user : null;
-            if (user.PasswordHash == HashPassword(password))
+            if (BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 return user;
             }
@@ -40,8 +39,8 @@ namespace Chat_Group_System.Services
                 PasswordHash = HashPassword(password),
                 Role = "Member",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow.AddHours(7),
-                UpdatedAt = DateTime.UtcNow.AddHours(7)
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN,
+                UpdatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
 
             await _userRepository.AddAsync(user);
@@ -53,10 +52,10 @@ namespace Chat_Group_System.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return false;
 
-            if (user.PasswordHash != HashPassword(currentPassword)) return false;
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash)) return false;
 
             user.PasswordHash = HashPassword(newPassword);
-            user.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            user.UpdatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN;
 
             await _userRepository.UpdateAsync(user);
             return true;
@@ -72,12 +71,10 @@ namespace Chat_Group_System.Services
             return await _userRepository.GetByEmailAsync(email);
         }
 
-        // Mock hashing method - In real usage, replace with BCrypt.Net.BCrypt.HashPassword
+        // Password hashing method using BCrypt
         private string HashPassword(string plainPassword)
         {
-            // For simplicity in this demo without installing extra packages
-            // Example: return BCrypt.Net.BCrypt.HashPassword(plainPassword);
-            return plainPassword; 
+            return BCrypt.Net.BCrypt.HashPassword(plainPassword);
         }
     }
 }
