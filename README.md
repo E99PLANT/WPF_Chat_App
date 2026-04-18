@@ -314,7 +314,7 @@ Chat_Group_System/
 
 ---
 
-## 👥 Nhóm phát triển
+<!-- ## 👥 Nhóm phát triển -->
 
 | Thành viên | Vai trò |
 |------------|---------|
