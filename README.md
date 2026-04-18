@@ -314,7 +314,7 @@ Chat_Group_System/
 
 ---
 
-<!-- ## 👥 Nhóm phát triển -->
+<!-- ## 👥 Nhóm phát triển
 
 | Thành viên | Vai trò |
 |------------|---------|
@@ -323,7 +323,7 @@ Chat_Group_System/
 | *(Tên thành viên 3)* | SignalR, Real-time Logic |
 | *(Tên thành viên 4)* | Testing, Documentation |
 
----
+--- -->
 
 ## 📄 License
 
