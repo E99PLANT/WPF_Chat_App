@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Chat_Group_System.Models.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -39,14 +40,35 @@ namespace Chat_Group_System.ViewModels
 
         public ObservableCollection<MessageViewModel> Messages { get; } = new();
 
-        public ConversationViewModel(Conversation conversation)
+        public ConversationViewModel(Conversation conversation, int currentUserId = -1)
         {
             Id = conversation.Id;
-            Name = conversation.Name;
             IsGroup = conversation.Type == ConversationType.Group;
             AvatarUrl = conversation.AvatarUrl;
             LastMessagePreview = conversation.LastMessagePreview;
             UpdatedAt = conversation.LastMessageAt;
+
+            if (IsGroup || string.IsNullOrEmpty(conversation.Name))
+            {
+                Name = conversation.Name;
+            }
+
+            if (!IsGroup && conversation.Members != null && conversation.Members.Any() && currentUserId > 0)
+            {
+                var otherUser = conversation.Members.FirstOrDefault(m => m.UserId != currentUserId)?.User;
+                if (otherUser != null)
+                {
+                    Name = otherUser.DisplayName;
+                    if (string.IsNullOrEmpty(AvatarUrl))
+                    {
+                        AvatarUrl = otherUser.AvatarUrl;
+                    }
+                }
+            }
+            else if (!IsGroup && string.IsNullOrEmpty(Name))
+            {
+                Name = "Chat";
+            }
         }
     }
 }

@@ -71,6 +71,11 @@ namespace Chat_Group_System.Services
             return await _userRepository.GetByEmailAsync(email);
         }
 
+        public async Task<User?> GetUserByEmailOrNameAsync(string searchTerm)
+        {
+            return await _userRepository.GetByEmailOrNameAsync(searchTerm);
+        }
+
         // Password hashing method using BCrypt
         private string HashPassword(string plainPassword)
         {

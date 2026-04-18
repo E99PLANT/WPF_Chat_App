@@ -57,8 +57,14 @@ namespace Chat_Group_System.Services
         {
             if (_hubConnection != null)
             {
-                await _hubConnection.StopAsync();
+                try 
+                {
+                    await _hubConnection.StopAsync();
+                }
+                catch { /* Ignore if already stopped */ }
+                
                 await _hubConnection.DisposeAsync();
+                _hubConnection = null;
             }
         }
 

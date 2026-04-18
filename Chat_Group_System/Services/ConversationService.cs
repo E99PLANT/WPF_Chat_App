@@ -59,7 +59,8 @@ namespace Chat_Group_System.Services
                 CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
             };
 
-            return await _conversationRepository.AddAsync(conversation, new[] { user1Id, user2Id });
+            await _conversationRepository.AddAsync(conversation, new[] { user1Id, user2Id });
+            return await _conversationRepository.GetByIdAsync(conversation.Id) ?? conversation;
         }
 
         public async Task UpdateLastMessagePreviewAsync(int conversationId, string previewText)

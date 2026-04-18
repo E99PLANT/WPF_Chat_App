@@ -8,6 +8,7 @@ namespace Chat_Group_System.Repositories
     {
         Task<User?> GetByIdAsync(int id);
         Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByEmailOrNameAsync(string searchTerm);
         Task<IEnumerable<User>> GetAllAsync();
         Task AddAsync(User user);
         Task UpdateAsync(User user);

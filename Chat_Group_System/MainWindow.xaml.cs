@@ -17,12 +17,14 @@ namespace Chat_Group_System
     public partial class MainWindow : Window
     {
         private readonly ChatController _chatController;
+        private readonly UserController _userController;
         public MainViewModel ViewModel { get; }
 
-        public MainWindow(ChatController chatController)
+        public MainWindow(ChatController chatController, UserController userController)
         {
             InitializeComponent();
             _chatController = chatController;
+            _userController = userController;
             ViewModel = new MainViewModel(_chatController);
             DataContext = ViewModel;
 
@@ -40,15 +42,15 @@ namespace Chat_Group_System
                 var convos = await _chatController.GetUserConversationsAsync(App.CurrentUser.Id);
                 foreach (var c in convos)
                 {
-                    ViewModel.Conversations.Add(new ConversationViewModel(c));
+                    ViewModel.Conversations.Add(new ConversationViewModel(c, App.CurrentUser.Id));
                 }
 
                 // 2. Mặc định chọn nhóm đầu tiên nếu có
                 if (ViewModel.Conversations.Count > 0)
                 {
                     ViewModel.SelectedConversation = ViewModel.Conversations[0];
+                    // Gán SelectedItem sẽ tự động gọi ConvList_SelectionChanged và tải tin nhắn
                     ConvList.SelectedItem = ViewModel.SelectedConversation;
-                    await LoadMessagesForConversation(ViewModel.SelectedConversation.Id);
                 }
             }
         }
@@ -56,7 +58,16 @@ namespace Chat_Group_System
         private async System.Threading.Tasks.Task LoadMessagesForConversation(int conversationId)
         {
             ViewModel.CurrentMessages.Clear();
-            var messages = await _chatController.GetRecentMessagesAsync(conversationId);
+
+            // Refresh Member List and determine if current user is still in the group
+            // Use scoped controller to prevent concurrency conflicts with incoming SignalR updates
+            using var scope = App.ServiceProvider.CreateScope();
+            var scopedController = scope.ServiceProvider.GetRequiredService<ChatController>();
+
+            var members = await scopedController.GetGroupMembersAsync(conversationId);
+            ViewModel.CanSendMessage = members.Any(m => m.UserId == App.CurrentUser?.Id);
+
+            var messages = await scopedController.GetRecentMessagesAsync(conversationId);
             foreach (var m in messages)
             {
                 ViewModel.CurrentMessages.Add(new MessageViewModel(m));
@@ -195,16 +206,88 @@ namespace Chat_Group_System
                 var result = await _chatController.CreateGroupAsync(App.CurrentUser.Id, groupName, new System.Collections.Generic.List<int>());
                 if (result.Success && result.Group != null)
                 {
-                    var vm = new ConversationViewModel(result.Group);
+                    var vm = new ConversationViewModel(result.Group, App.CurrentUser.Id);
                     ViewModel.Conversations.Add(vm);
                     ViewModel.SelectedConversation = vm;
                     ConvList.SelectedItem = vm;
-                    await LoadMessagesForConversation(vm.Id);
                 }
             }
         }
 
-        private void BtnGroupSettings_Click(object sender, RoutedEventArgs e)
+        private async void BtnNewDM_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.CurrentUser == null) return;
+
+            var createDMWin = new Views.CreateDMWindow
+            {
+                Owner = this
+            };
+
+            if (createDMWin.ShowDialog() == true)
+            {
+                string targetSearchTerm = createDMWin.SearchTerm;
+                var targetUser = await _userController.GetUserByEmailOrNameAsync(targetSearchTerm);
+                
+                if (targetUser == null)
+                {
+                    MessageBox.Show("User not found!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
+                if (targetUser.Id == App.CurrentUser.Id)
+                {
+                    MessageBox.Show("You cannot direct message yourself.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var dmResult = await _chatController.CreateOrGetDirectMessageAsync(App.CurrentUser.Id, targetUser.Id);
+
+                if (dmResult.Success && dmResult.Conversation != null)
+                {
+                    var existingVm = ViewModel.Conversations.FirstOrDefault(c => c.Id == dmResult.Conversation.Id);
+                    if (existingVm != null)
+                    {
+                        ViewModel.SelectedConversation = existingVm;
+                        ConvList.SelectedItem = existingVm;
+                    }
+                    else
+                    {
+                        var vm = new ConversationViewModel(dmResult.Conversation, App.CurrentUser.Id);
+                        ViewModel.Conversations.Add(vm);
+                        ViewModel.SelectedConversation = vm;
+                        ConvList.SelectedItem = vm;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(dmResult.Message ?? "Failed to create DM", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void BtnLogout_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Bạn có chắc chắn muốn đăng xuất?", "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                // Disconnect SignalR real-time stream
+                await _chatController.DisconnectRealtimeAsync();
+                
+                // Clear current user
+                App.CurrentUser = null;
+                ViewModel.CurrentMessages.Clear();
+                ViewModel.Conversations.Clear();
+
+                // Open Login Window
+                var userController = App.ServiceProvider.GetRequiredService<UserController>();
+                var loginWin = new Views.LoginWindow(userController);
+                loginWin.Show();
+
+                // Close current window
+                this.Close();
+            }
+        }
+
+        private async void BtnGroupSettings_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.SelectedConversation == null)
             {
@@ -213,8 +296,19 @@ namespace Chat_Group_System
             }
 
             var groupSettingsWin = App.ServiceProvider.GetRequiredService<Views.GroupSettingsWindow>();
-            groupSettingsWin.Owner = this;
-            groupSettingsWin.ShowDialog();
+            var conversationResult = await _chatController.GetUserConversationsAsync(App.CurrentUser.Id);
+            var conversationModel = conversationResult.FirstOrDefault(c => c.Id == ViewModel.SelectedConversation.Id);
+            
+            if (conversationModel != null)
+            {
+                groupSettingsWin.SetConversation(conversationModel);
+                groupSettingsWin.Owner = this;
+                groupSettingsWin.ShowDialog();
+            }
+            else
+            {
+                MessageBox.Show("Không tìm thấy thông tin nhóm.");
+            }
         }
 
         private void UserProfile_Click(object sender, MouseButtonEventArgs e)

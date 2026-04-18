@@ -15,6 +15,7 @@
         <local:UserIdToForegroundConverter x:Key="UserIdToForegroundConverter" />
         <local:NullOrWhiteSpaceToCollapsedConverter x:Key="NullOrWhiteSpaceToCollapsedConverter" />
         <local:BytesToHumanReadableConverter x:Key="BytesToHumanReadableConverter" />
+        <local:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         
         <!-- Chat Message Templates -->
         <DataTemplate x:Key="SelfMessageTemplate">
@@ -88,9 +89,20 @@
             </StackPanel>
         </DataTemplate>
 
+        <!-- System Message Template -->
+        <DataTemplate x:Key="SystemMessageTemplate">
+            <StackPanel HorizontalAlignment="Center" Margin="0,15,0,5">
+                <Border Background="#E6EAF0" CornerRadius="12" Padding="12,6">
+                    <TextBlock Text="{Binding Content}" FontSize="12" Foreground="#5A6D80" FontWeight="Medium" TextWrapping="Wrap"/>
+                </Border>
+                <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:hh:mm tt}}" FontSize="10" Foreground="#A0AAB5" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </DataTemplate>
+
         <local:MessageTemplateSelector x:Key="MessageTemplateSelector" 
             SelfMessageTemplate="{StaticResource SelfMessageTemplate}" 
-            OtherMessageTemplate="{StaticResource OtherMessageTemplate}"/>
+            OtherMessageTemplate="{StaticResource OtherMessageTemplate}"
+            SystemMessageTemplate="{StaticResource SystemMessageTemplate}"/>
 
     </Window.Resources>
 
@@ -118,12 +130,16 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="🔷" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
                         <TextBlock Text="NexChat" FontSize="18" FontWeight="Bold" Foreground="#1A1A1A" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button x:Name="btnNewChat" Click="BtnNewChat_Click" Grid.Column="1" Content="+" Background="Transparent" Foreground="#6B6B6B" BorderThickness="0" FontSize="18" Cursor="Hand" ToolTip="New Chat"/>
+                    <Button x:Name="btnNewChat" Click="BtnNewChat_Click" Grid.Column="1" Content="👥" Margin="0,0,10,0" Background="Transparent" Foreground="#6B6B6B" BorderThickness="0" FontSize="16" Cursor="Hand" ToolTip="Tạo nhóm mới"/>
+                    <Button x:Name="btnNewDM" Click="BtnNewDM_Click" Grid.Column="2" Content="👤" Margin="0,0,10,0" Background="Transparent" Foreground="#6B6B6B" BorderThickness="0" FontSize="16" Cursor="Hand" ToolTip="Tạo chat 1-1"/>
+                    <Button x:Name="btnLogout" Click="BtnLogout_Click" Grid.Column="3" Content="🚪" Background="Transparent" Foreground="#EF4444" BorderThickness="0" FontSize="14" Cursor="Hand" ToolTip="Đăng xuất"/>
                 </Grid>
 
                 <!-- Search Box -->
@@ -336,55 +352,63 @@
             <!-- 3) Input Area -->
             <Border Grid.Row="2" Background="#F5F4F0" BorderBrush="#E8E7E3" BorderThickness="0,1,0,0" Padding="16,12">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/> <!-- Tools -->
-                        <ColumnDefinition Width="*"/>    <!-- TextBox -->
-                        <ColumnDefinition Width="Auto"/> <!-- Send -->
-                    </Grid.ColumnDefinitions>
+                    <!-- User is Member: Show Input Area -->
+                    <Grid Visibility="{Binding CanSendMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/> <!-- Tools -->
+                            <ColumnDefinition Width="*"/>    <!-- TextBox -->
+                            <ColumnDefinition Width="Auto"/> <!-- Send -->
+                        </Grid.ColumnDefinitions>
 
-                    <!-- Tools -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
-                        <Button x:Name="btnEmoji" Content="😊" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand" Click="BtnEmoji_Click"/>
-                        <Popup x:Name="EmojiPickerPopup" PlacementTarget="{Binding ElementName=btnEmoji}" Placement="Top" StaysOpen="False" VerticalOffset="-5">
-                            <Border Background="#FFFFFF" BorderBrush="#E8E7E3" BorderThickness="1" CornerRadius="8" Padding="8">
-                                <Border.Effect>
-                                    <DropShadowEffect Color="#000000" BlurRadius="10" Opacity="0.1" ShadowDepth="4"/>
-                                </Border.Effect>
-                                <UniformGrid Columns="5" Rows="2">
-                                    <Button Content="😀" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="😂" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="😍" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="👍" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="🙌" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="❤️" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="🔥" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="🎉" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="🤔" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                    <Button Content="😎" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
-                                </UniformGrid>
-                            </Border>
-                        </Popup>
-
-                        <Button x:Name="btnSelectFile" Content="📎" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand" Click="BtnSelectFile_Click"/>
-                        <Button x:Name="btnSelectImage" Content="🖼" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Cursor="Hand" Click="BtnSelectImage_Click"/>
-                    </StackPanel>
-
-                    <!-- Text input -->
-                    <TextBox x:Name="txtInputMessage" Grid.Column="1" Text="{Binding InputMessage, UpdateSourceTrigger=PropertyChanged}" Foreground="#9A9A9A" Background="Transparent" BorderThickness="0" FontSize="14" VerticalAlignment="Center" FocusVisualStyle="{x:Null}" KeyDown="TxtInputMessage_KeyDown" GotFocus="TxtInputMessage_GotFocus" LostFocus="TxtInputMessage_LostFocus"/>
-
-                    <!-- Send Button -->
-                    <Button x:Name="btnSend" Click="BtnSend_Click" Grid.Column="2" MinWidth="75" Height="36" Cursor="Hand" Margin="15,0,0,0">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="#3B3A8B" CornerRadius="8">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
-                                        <TextBlock Text="Gửi" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13" Margin="0,0,6,0"/>
-                                        <TextBlock Text="➤" Foreground="#FFFFFF" FontSize="10" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                        <!-- Tools -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                            <Button x:Name="btnEmoji" Content="😊" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand" Click="BtnEmoji_Click"/>
+                            <Popup x:Name="EmojiPickerPopup" PlacementTarget="{Binding ElementName=btnEmoji}" Placement="Top" StaysOpen="False" VerticalOffset="-5">
+                                <Border Background="#FFFFFF" BorderBrush="#E8E7E3" BorderThickness="1" CornerRadius="8" Padding="8">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" BlurRadius="10" Opacity="0.1" ShadowDepth="4"/>
+                                    </Border.Effect>
+                                    <UniformGrid Columns="5" Rows="2">
+                                        <Button Content="😀" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="😂" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="😍" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="👍" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="🙌" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="❤️" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="🔥" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="🎉" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="🤔" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                        <Button Content="😎" FontSize="20" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnEmojiPick_Click"/>
+                                    </UniformGrid>
                                 </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                            </Popup>
+
+                            <Button x:Name="btnSelectFile" Content="📎" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Margin="0,0,8,0" Cursor="Hand" Click="BtnSelectFile_Click"/>
+                            <Button x:Name="btnSelectImage" Content="🖼" Background="Transparent" BorderThickness="0" Foreground="#6B6B6B" FontSize="18" Cursor="Hand" Click="BtnSelectImage_Click"/>
+                        </StackPanel>
+
+                        <!-- Text input -->
+                        <TextBox x:Name="txtInputMessage" Grid.Column="1" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" Foreground="#9A9A9A" Background="Transparent" BorderThickness="0" FontSize="14" VerticalAlignment="Center" FocusVisualStyle="{x:Null}" KeyDown="TxtInputMessage_KeyDown" GotFocus="TxtInputMessage_GotFocus" LostFocus="TxtInputMessage_LostFocus"/>
+
+                        <!-- Send Button -->
+                        <Button x:Name="btnSend" Click="BtnSend_Click" Grid.Column="2" MinWidth="75" Height="36" Cursor="Hand" Margin="15,0,0,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="#3B3A8B" CornerRadius="8">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
+                                            <TextBlock Text="Gửi" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13" Margin="0,0,6,0"/>
+                                            <TextBlock Text="➤" Foreground="#FFFFFF" FontSize="10" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <!-- User is NOT Member: Cannot Send Message -->
+                    <Grid Visibility="{Binding CanSendMessage, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <TextBlock Text="Bạn không thể nhắn vào trong group này" Foreground="#9A9A9A" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" FontStyle="Italic"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

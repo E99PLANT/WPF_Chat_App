@@ -40,28 +40,31 @@ namespace Chat_Group_System
 
         private void ConfigureServices(IServiceCollection services)
         {
+            // Add IConfiguration
+            services.AddSingleton<IConfiguration>(Configuration);
+
             // DbContext — Code First với SQL Server
             services.AddDbContext<NexChatDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection"),
                     sql => sql.EnableRetryOnFailure(maxRetryCount: 3)
-                )
+                ), ServiceLifetime.Transient
             );
 
             // Repositories
-            services.AddScoped<Repositories.IUserRepository, Repositories.UserRepository>();
-            services.AddScoped<Repositories.IConversationRepository, Repositories.ConversationRepository>();
-            services.AddScoped<Repositories.IMessageRepository, Repositories.MessageRepository>();
+            services.AddTransient<Repositories.IUserRepository, Repositories.UserRepository>();
+            services.AddTransient<Repositories.IConversationRepository, Repositories.ConversationRepository>();
+            services.AddTransient<Repositories.IMessageRepository, Repositories.MessageRepository>();
 
             // Services
-            services.AddScoped<Services.IUserService, Services.UserService>();
-            services.AddScoped<Services.IConversationService, Services.ConversationService>();
-            services.AddScoped<Services.IMessageService, Services.MessageService>();
+            services.AddTransient<Services.IUserService, Services.UserService>();
+            services.AddTransient<Services.IConversationService, Services.ConversationService>();
+            services.AddTransient<Services.IMessageService, Services.MessageService>();
             services.AddSingleton<Services.ISignalRService, Services.SignalRService>();
 
             // Controllers
-            services.AddScoped<Controllers.UserController>();
-            services.AddScoped<Controllers.ChatController>();
+            services.AddTransient<Controllers.UserController>();
+            services.AddTransient<Controllers.ChatController>();
 
             // Windows / Views
             services.AddTransient<MainWindow>();

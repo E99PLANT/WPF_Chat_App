@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 using Chat_Group_System.Models.Entities;
 using Chat_Group_System.Services;
 
@@ -64,6 +65,19 @@ namespace Chat_Group_System.Controllers
             return await _conversationService.GetUserConversationsAsync(userId);
         }
 
+        public async Task<(bool Success, string Message, Conversation? Conversation)> CreateOrGetDirectMessageAsync(int user1Id, int user2Id)
+        {
+            try
+            {
+                var dm = await _conversationService.CreateOrGetDirectMessageAsync(user1Id, user2Id);
+                return (true, "DM retrieved successfully", dm);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get or create direct message: {ex.Message}", null);
+            }
+        }
+
         public async Task<(bool Success, string Message, Conversation? Group)> CreateGroupAsync(int creatorId, string groupName, IEnumerable<int> memberIds)
         {
             try
@@ -83,6 +97,20 @@ namespace Chat_Group_System.Controllers
             try
             {
                 await _conversationService.AddMemberToGroupAsync(conversationId, currentUserId, newMemberId);
+                
+                // Fetch the new user's name to display in the system message
+                var newUser = await _conversationService.GetGroupMembersAsync(conversationId);
+                var newMemberName = newUser.FirstOrDefault(u => u.UserId == newMemberId)?.User?.DisplayName ?? "Người dùng mới";
+
+                var sysMsg = await _messageService.SendSystemMessageAsync(conversationId, $"{newMemberName} đã tham gia nhóm.");
+                // Broadcast system message
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Id = sysMsg.Id,
+                    Type = MessageType.System,
+                    Content = sysMsg.Content
+                });
+                await _signalRService.SendMessageAsync(conversationId, sysMsg.SenderId, "[SYSTEM]" + payload);
+
                 return (true, "Member added successfully");
             }
             catch (Exception ex)
@@ -95,7 +123,20 @@ namespace Chat_Group_System.Controllers
         {
             try
             {
+                // Fetch name before removing 
+                var membersInfo = await _conversationService.GetGroupMembersAsync(conversationId);
+                var memberName = membersInfo.FirstOrDefault(u => u.UserId == memberToRemoveId)?.User?.DisplayName ?? "Người dùng";
+
                 await _conversationService.RemoveMemberFromGroupAsync(conversationId, currentUserId, memberToRemoveId);
+
+                var sysMsg = await _messageService.SendSystemMessageAsync(conversationId, $"{memberName} đã bị xoá khỏi nhóm.");
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Id = sysMsg.Id,
+                    Type = MessageType.System,
+                    Content = sysMsg.Content
+                });
+                await _signalRService.SendMessageAsync(conversationId, sysMsg.SenderId, "[SYSTEM]" + payload);
+
                 return (true, "Member removed successfully");
             }
             catch (Exception ex)
@@ -108,7 +149,23 @@ namespace Chat_Group_System.Controllers
         {
             try
             {
+                // Fetch name before leaving
+                var membersInfo = await _conversationService.GetGroupMembersAsync(conversationId);
+                var memberName = membersInfo.FirstOrDefault(u => u.UserId == currentUserId)?.User?.DisplayName ?? "Người dùng";
+
                 await _conversationService.LeaveOrDisbandGroupAsync(conversationId, currentUserId);
+
+                // Send system message only if the group wasn't disbanded completely
+                // (e.g. if IConversationRepository.GetGroupById returns not null, but since we are just adding a message, it might be fine)
+                
+                var sysMsg = await _messageService.SendSystemMessageAsync(conversationId, $"{memberName} đã rời khỏi nhóm.");
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Id = sysMsg.Id,
+                    Type = MessageType.System,
+                    Content = sysMsg.Content
+                });
+                await _signalRService.SendMessageAsync(conversationId, sysMsg.SenderId, "[SYSTEM]" + payload);
+
                 return (true, "Left/Disbanded successfully");
             }
             catch (Exception ex)

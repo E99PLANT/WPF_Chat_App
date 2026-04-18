@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Chat_Group_System.Models.Entities;
 using Chat_Group_System.Repositories;
@@ -67,6 +68,26 @@ namespace Chat_Group_System.Services
             
             var preview = type == MessageType.Image ? "[Image]" : "[File]";
             await _conversationService.UpdateLastMessagePreviewAsync(conversationId, preview);
+
+            return await _messageRepository.GetMessageByIdAsync(savedMessage.Id) ?? savedMessage;
+        }
+
+        public async Task<Message> SendSystemMessageAsync(int conversationId, string content)
+        {
+            // Requires a SenderId to satisfy FK logic.
+            var firstMemberId = (await _conversationService.GetGroupMembersAsync(conversationId)).FirstOrDefault()?.UserId ?? 1;
+
+            var msg = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = firstMemberId, // Dummy fallback, ignored mostly because Type = System
+                Content = content,
+                Type = MessageType.System,
+                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
+            };
+
+            var savedMessage = await _messageRepository.AddMessageAsync(msg);
+            await _conversationService.UpdateLastMessagePreviewAsync(conversationId, content);
 
             return await _messageRepository.GetMessageByIdAsync(savedMessage.Id) ?? savedMessage;
         }

@@ -38,6 +38,8 @@ namespace Chat_Group_System.Repositories
         public async Task<Conversation?> GetDirectMessageAsync(int userId1, int userId2)
         {
             return await _context.Conversations
+                .Include(c => c.Members)
+                .ThenInclude(m => m.User)
                 .Where(c => c.Type == ConversationType.DirectMessage && c.Members.Count == 2)
                 .FirstOrDefaultAsync(c =>
                     c.Members.Any(m => m.UserId == userId1) &&

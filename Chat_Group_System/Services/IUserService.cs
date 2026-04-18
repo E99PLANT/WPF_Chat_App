@@ -10,5 +10,6 @@ namespace Chat_Group_System.Services
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
         Task<User?> GetUserByIdAsync(int id);
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserByEmailOrNameAsync(string searchTerm);
     }
 }

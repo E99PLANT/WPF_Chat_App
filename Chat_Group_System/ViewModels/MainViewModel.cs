@@ -7,6 +7,7 @@ using Chat_Group_System.Models.Entities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Chat_Group_System.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Chat_Group_System.ViewModels
 {
@@ -27,6 +28,9 @@ namespace Chat_Group_System.ViewModels
 
         [ObservableProperty]
         private ConversationViewModel? _selectedConversation;
+
+        [ObservableProperty]
+        private bool _canSendMessage = true;
 
         [ObservableProperty]
         private string _searchText = "Search...";
@@ -64,14 +68,48 @@ namespace Chat_Group_System.ViewModels
             // Update UI on the main thread
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
+                bool isSystem = content.StartsWith("[SYSTEM]");
+                
                 if (SelectedConversation != null && SelectedConversation.Id == convId)
                 {
-                    if (App.CurrentUser != null && senderId == App.CurrentUser.Id)
+                    if (App.CurrentUser != null && senderId == App.CurrentUser.Id && !isSystem)
                     {
                         return; // Ignore self
                     }
 
-                    if (content.StartsWith("[ATTACHMENT]"))
+                    if (content.StartsWith("[SYSTEM]"))
+                    {
+                        string json = content.Substring("[SYSTEM]".Length);
+                        try
+                        {
+                            var data = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+                            var msg = new Message
+                            {
+                                Id = data.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0,
+                                ConversationId = convId,
+                                SenderId = senderId,
+                                Type = MessageType.System,
+                                CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN,
+                                Content = data.TryGetProperty("Content", out var contentProp) ? contentProp.GetString() : "System Message"
+                            };
+                            CurrentMessages.Add(new MessageViewModel(msg));
+
+                            // Refresh Send permissions when System messages occur (kick, leave, etc.)
+                            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                            {
+                                using var scope = App.ServiceProvider.CreateScope();
+                                var scopedController = scope.ServiceProvider.GetRequiredService<ChatController>();
+
+                                var members = await scopedController.GetGroupMembersAsync(convId);
+                                CanSendMessage = members.Any(m => m.UserId == App.CurrentUser?.Id);
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Failed to parse system message json: {ex.Message}");
+                        }
+                    }
+                    else if (content.StartsWith("[ATTACHMENT]"))
                     {
                         string json = content.Substring("[ATTACHMENT]".Length);
                         try
@@ -129,7 +167,8 @@ namespace Chat_Group_System.ViewModels
                     if (targetConv != null)
                     {
                         targetConv.UnreadCount++;
-                        targetConv.LastMessagePreview = content.StartsWith("[ATTACHMENT]") ? "[File Attached]" : content;
+                        targetConv.LastMessagePreview = content.StartsWith("[SYSTEM]") ? "Tin nhắn hệ thống" : 
+                            (content.StartsWith("[ATTACHMENT]") ? "[File Attached]" : content);
                     }
                 }
             });

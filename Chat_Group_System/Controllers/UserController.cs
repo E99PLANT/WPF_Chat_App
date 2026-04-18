@@ -89,5 +89,10 @@ namespace Chat_Group_System.Controllers
         {
             return await _userService.GetUserByEmailAsync(email);
         }
+
+        public async Task<User?> GetUserByEmailOrNameAsync(string searchTerm)
+        {
+            return await _userService.GetUserByEmailOrNameAsync(searchTerm);
+        }
     }
 }

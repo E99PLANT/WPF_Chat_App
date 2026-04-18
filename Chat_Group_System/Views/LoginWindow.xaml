@@ -64,7 +64,7 @@
                 <!-- Form -->
                 <TextBlock Text="EMAIL" FontSize="10" FontWeight="SemiBold" Foreground="#6B6B6B" Margin="0,0,0,5"/>
                 <TextBox x:Name="txtEmail" Margin="0,0,0,15"/>
-
+                <TextBlock Text="Password" FontSize="10" FontWeight="SemiBold" Foreground="#6B6B6B" Margin="0,0,0,5"/>
                 <Grid Margin="0,0,0,5">
                     <PasswordBox x:Name="txtPassword" Padding="10,0,35,0"/>
                     <TextBox x:Name="txtVisiblePassword" Visibility="Collapsed" Padding="10,0,35,0"/>

@@ -45,7 +45,8 @@
 | Tính năng | Mô tả |
 |-----------|-------|
 | **Đăng ký** | Tạo tài khoản với tên, email, mật khẩu |
-| **Đăng nhập** | Xác thực bằng email + mật khẩu (SHA-256) |
+| **Đăng nhập** | Xác thực bằng email + mật khẩu (BCrypt) |
+| **Đăng xuất** | Hỗ trợ đăng xuất và chuyển về màn hình Login |
 | **Đổi mật khẩu** | Xác minh mật khẩu cũ trước khi đổi |
 | **Hiện/ẩn mật khẩu** | Toggle 👁/🙈 trên các ô mật khẩu |
 | **Phân quyền** | Phân biệt `Admin` và `Member` |
@@ -58,6 +59,8 @@
 | **Gửi tin nhắn văn bản** | Nhắn tin tức thì qua SignalR |
 | **Gửi file đính kèm** | Upload và gửi file bất kỳ (≤ 25 MB) |
 | **Gửi ảnh** | Upload và gửi ảnh PNG/JPG/JPEG |
+| **Tin nhắn hệ thống** | Tự động thông báo khi có người `Tham gia / Bị xoá / Rời đi` |
+| **Khóa chat tự động** | Thay thế khung chat bằng cảnh báo View-only khi người dùng không còn trong nhóm |
 | **Emoji Picker** | Chọn và chèn emoji vào tin nhắn 😊 |
 | **Enter để gửi** | Nhấn `Enter` gửi, `Shift+Enter` xuống dòng |
 | **Bubble phân biệt** | Tin của mình (phải, màu tím) — Tin người khác (trái, màu trắng) |
@@ -83,9 +86,10 @@
 ### 📩 Tin nhắn trực tiếp (Direct Message)
 | Tính năng | Mô tả |
 |-----------|-------|
-| **DM 1-1** | Tìm kiếm và mở chat riêng với user bất kỳ |
-| **Tự động tạo DM** | Nếu chưa có DM, tự tạo conversation mới |
-| **Lịch sử tin nhắn** | Load 50 tin nhắn gần nhất khi mở chat |
+| **DM 1-1** | Tìm kiếm bằng `Email` hoặc `Tên/DisplayName` để mở chat riêng |
+| **Không tự chat** | Báo lỗi hoặc chặn nếu tự nhập email của bản thân |
+| **Tự động tạo DM** | Nếu chưa có DM, tự tạo conversation kiểu Direct Message |
+| **Lịch sử tin nhắn** | Load 50 tin nhắn gần nhất khi mở chat (auto scroll) |
 
 ---
 
@@ -245,6 +249,7 @@ Hoặc nhấn **F5** trong Visual Studio.
 | `Microsoft.Extensions.Configuration` | 8.x | Đọc `appsettings.json` |
 | `Microsoft.EntityFrameworkCore.SqlServer` | 8.x | Code First ORM |
 | `Microsoft.EntityFrameworkCore.Tools` | 8.x | Migration CLI |
+| `BCrypt.Net-Next` | 4.x | Hashing mật khẩu chuẩn an toàn cao |
 | `System.Text.Json` | built-in | Parse JSON từ SignalR payload |
 
 ---
@@ -302,11 +307,12 @@ Chat_Group_System/
 
 ---
 
-## 🔒 Bảo mật
+## 🔒 Bảo mật & Kiến trúc mở rộng
 
 | Cơ chế | Mô tả |
 |--------|-------|
-| **Password Hashing** | SHA-256 — mật khẩu không lưu plain text |
+| **Password Hashing** | Sử dụng thư viện `BCrypt.Net-Next` băm mật khẩu + salt an toàn |
+| **Race Condition / DI Scopes** | Tách biệt các tác vụ DBContext (CreateScope) để tránh Exception đa luồng |
 | **Soft Delete** | User/Message bị xóa mềm (`isDeleted`, `isActive`) |
 | **Permission Check** | Chỉ Admin mới được add/remove/disband group |
 | **Email Unique** | Không thể đăng ký 2 tài khoản cùng email |

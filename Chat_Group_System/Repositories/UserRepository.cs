@@ -25,6 +25,15 @@ namespace Chat_Group_System.Repositories
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
+        public async Task<User?> GetByEmailOrNameAsync(string searchTerm)
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+            return await _context.Users.FirstOrDefaultAsync(u => 
+                u.Email.ToLower() == lowerSearchTerm || 
+                u.DisplayName.ToLower() == lowerSearchTerm ||
+                u.DisplayName.ToLower().Contains(lowerSearchTerm));
+        }
+
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             return await _context.Users.ToListAsync();
