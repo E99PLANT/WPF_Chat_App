@@ -38,6 +38,8 @@ namespace Chat_Group_System.ViewModels
         [ObservableProperty]
         private string? _typingMessage;
 
+        public string TypeText => IsGroup ? "Nhóm" : "Trực tiếp";
+
         public ObservableCollection<MessageViewModel> Messages { get; } = new();
 
         public ConversationViewModel(Conversation conversation, int currentUserId = -1)

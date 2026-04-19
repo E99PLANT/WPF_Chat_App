@@ -57,4 +57,9 @@
     </None>
   </ItemGroup>
 
+  <!-- ── Web Host SignalR Server ────────────────────────────── -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

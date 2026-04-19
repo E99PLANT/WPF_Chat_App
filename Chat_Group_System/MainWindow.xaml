@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Chat_Group_System"
+        xmlns:entities="clr-namespace:Chat_Group_System.Models.Entities"
         mc:Ignorable="d"
         Title="NexChat" Height="700" Width="1000"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI, Inter"
@@ -27,23 +28,61 @@
                 <ItemsControl ItemsSource="{Binding Attachments}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#3B3A8B" Padding="10" CornerRadius="8" MaxWidth="500" Margin="0,2,0,2">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <Border Grid.Column="0" Background="#4F4EAA" CornerRadius="8" Padding="12" Margin="0,0,10,0">
-                                        <TextBlock Text="📄" FontSize="20"/>
-                                    </Border>
-                                    
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
-                                        <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="Medium" Foreground="#FFFFFF" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding SizeBytes, Converter={StaticResource BytesToHumanReadableConverter}, StringFormat={}{0} · Click to open}" FontSize="11" Foreground="#FFFFFF" Opacity="0.8"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
+                            <Grid Margin="0,2,0,2" MaxWidth="500">
+                                <!-- 1. IMAGE VIEW -->
+                                <Border x:Name="ImgBorder" Background="#4F4EAA" CornerRadius="8" Visibility="Collapsed">
+                                    <Grid>
+                                        <Image x:Name="ChatImage" MaxHeight="300" Stretch="Uniform" Margin="2"/>
+                                        <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 2. VIDEO VIEW -->
+                                <Border x:Name="VidBorder" Background="#4F4EAA" CornerRadius="8" Visibility="Collapsed">
+                                    <Grid>
+                                        <MediaElement x:Name="ChatMediaElement" LoadedBehavior="Manual" UnloadedBehavior="Stop" MaxHeight="300" Volume="1.0" Margin="2"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Click="BtnPlayMedia_Click" Content="▶" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                                            <Button Click="BtnPauseMedia_Click" Content="⏸" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                                        </StackPanel>
+                                        <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 3. FILE CARD (Default) -->
+                                <Border x:Name="FileBorder" Background="#3B3A8B" Padding="10" CornerRadius="8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Border Grid.Column="0" Background="#4F4EAA" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                            <TextBlock Text="📄" FontSize="20"/>
+                                        </Border>
+                                        
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,5,0">
+                                            <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="Medium" Foreground="#FFFFFF" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding SizeBytes, Converter={StaticResource BytesToHumanReadableConverter}, StringFormat={}{0}}" FontSize="11" Foreground="#FFFFFF" Opacity="0.8"/>
+                                        </StackPanel>
+
+                                        <Button Grid.Column="2" Click="BtnDownloadAttachment_Click" Content="📥" Width="30" Height="30" Background="Transparent" Foreground="White" BorderThickness="0" FontSize="16" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Type}" Value="Image">
+                                    <Setter TargetName="ImgBorder" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="FileBorder" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="ChatImage" Property="Source" Value="{Binding FileUrl}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="Video">
+                                    <Setter TargetName="VidBorder" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="FileBorder" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="ChatMediaElement" Property="Source" Value="{Binding FileUrl}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -64,23 +103,61 @@
                 <ItemsControl ItemsSource="{Binding Attachments}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#F0F0F0" Padding="10" CornerRadius="8" MaxWidth="500" Margin="0,2,0,2">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <Border Grid.Column="0" Background="#E0E0E0" CornerRadius="8" Padding="12" Margin="0,0,10,0">
-                                        <TextBlock Text="📄" FontSize="20"/>
-                                    </Border>
-                                    
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,15,0">
-                                        <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="Medium" Foreground="#1A1A1A" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding SizeBytes, Converter={StaticResource BytesToHumanReadableConverter}, StringFormat={}{0} · Click to open}" FontSize="11" Foreground="#1A1A1A" Opacity="0.8"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
+                            <Grid Margin="0,2,0,2" MaxWidth="500">
+                                <!-- 1. IMAGE VIEW -->
+                                <Border x:Name="ImgBorder" Background="#E0E0E0" CornerRadius="8" Visibility="Collapsed">
+                                    <Grid>
+                                        <Image x:Name="OtherChatImage" MaxHeight="300" Stretch="Uniform" Margin="2"/>
+                                        <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 2. VIDEO VIEW -->
+                                <Border x:Name="VidBorder" Background="#E0E0E0" CornerRadius="8" Visibility="Collapsed">
+                                    <Grid>
+                                        <MediaElement x:Name="OtherChatMediaElement" LoadedBehavior="Manual" UnloadedBehavior="Stop" MaxHeight="300" Volume="1.0" Margin="2"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Click="BtnPlayMedia_Click" Content="▶" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                                            <Button Click="BtnPauseMedia_Click" Content="⏸" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                                        </StackPanel>
+                                        <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 3. FILE CARD (Default) -->
+                                <Border x:Name="FileBorder" Background="#F0F0F0" Padding="10" CornerRadius="8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Border Grid.Column="0" Background="#E0E0E0" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                            <TextBlock Text="📄" FontSize="20"/>
+                                        </Border>
+                                        
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,5,0">
+                                            <TextBlock Text="{Binding FileName}" FontSize="14" FontWeight="Medium" Foreground="#1A1A1A" Margin="0,0,0,2" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding SizeBytes, Converter={StaticResource BytesToHumanReadableConverter}, StringFormat={}{0}}" FontSize="11" Foreground="#1A1A1A" Opacity="0.8"/>
+                                        </StackPanel>
+
+                                        <Button Grid.Column="2" Click="BtnDownloadAttachment_Click" Content="📥" Width="30" Height="30" Background="Transparent" Foreground="#6B6B6B" BorderThickness="0" FontSize="16" Cursor="Hand" ToolTip="Tải xuống"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Type}" Value="Image">
+                                    <Setter TargetName="ImgBorder" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="FileBorder" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="OtherChatImage" Property="Source" Value="{Binding FileUrl}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="Video">
+                                    <Setter TargetName="VidBorder" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="FileBorder" Property="Visibility" Value="Collapsed"/>
+                                    <Setter TargetName="OtherChatMediaElement" Property="Source" Value="{Binding FileUrl}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -219,13 +296,17 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="Bold" FontSize="13" TextTrimming="CharacterEllipsis">
+                                                <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
                                                             <Setter Property="Foreground" Value="#3D3D3D"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                                                     <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding UnreadCount}" Value="0">
+                                                                    <Setter Property="FontWeight" Value="Medium" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -293,7 +374,7 @@
                             <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold" Foreground="#1A1A1A"/>
                             <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                                 <Ellipse Width="8" Height="8" Fill="#22C55E" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding Type}" FontSize="12" Foreground="#6B6B6B" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding TypeText}" FontSize="12" Foreground="#6B6B6B" VerticalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>

@@ -138,7 +138,20 @@ namespace Chat_Group_System.ViewModels
                                     FileUrl = filePath ?? ""
                                 });
                             }
-                            CurrentMessages.Add(new MessageViewModel(msg));
+                            var msgViewModel = new MessageViewModel(msg);
+                            CurrentMessages.Add(msgViewModel);
+
+                            // Fetch SenderName asynchronously
+                            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                            {
+                                using var scope = App.ServiceProvider.CreateScope();
+                                var userController = scope.ServiceProvider.GetRequiredService<UserController>();
+                                var senderUser = await userController.GetUserByIdAsync(senderId);
+                                if (senderUser != null)
+                                {
+                                    msgViewModel.SenderName = senderUser.DisplayName;
+                                }
+                            });
                         }
                         catch (Exception ex)
                         {
@@ -148,7 +161,21 @@ namespace Chat_Group_System.ViewModels
                     else
                     {
                         // Update active conversation
-                        CurrentMessages.Add(new MessageViewModel(new Message { ConversationId = convId, SenderId = senderId, Content = content, Type = MessageType.Text, CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN }));
+                        var newMsg = new Message { ConversationId = convId, SenderId = senderId, Content = content, Type = MessageType.Text, CreatedAt = Chat_Group_System.Helpers.TimeHelper.NowVN };
+                        var msgViewModel = new MessageViewModel(newMsg);
+                        CurrentMessages.Add(msgViewModel);
+
+                        // Fetch SenderName asynchronously
+                        System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                        {
+                            using var scope = App.ServiceProvider.CreateScope();
+                            var userController = scope.ServiceProvider.GetRequiredService<UserController>();
+                            var senderUser = await userController.GetUserByIdAsync(senderId);
+                            if (senderUser != null)
+                            {
+                                msgViewModel.SenderName = senderUser.DisplayName;
+                            }
+                        });
                     }
                 }
                 else
@@ -209,15 +236,11 @@ namespace Chat_Group_System.ViewModels
 
         partial void OnSelectedConversationChanged(ConversationViewModel? oldValue, ConversationViewModel? newValue)
         {
-            if (oldValue != null)
-            {
-                _ = _chatController.LeaveGroupAsync(oldValue.Id);
-            }
             if (newValue != null)
             {
                 newValue.UnreadCount = 0; // Clear unread 
+                // Group is already joined on load or creation, but joining again is safe and idempotent in SignalR
                 _ = _chatController.JoinGroupAsync(newValue.Id);
-                // Ideally, load recent messages here
             }
         }
 

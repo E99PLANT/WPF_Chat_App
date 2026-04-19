@@ -11,6 +11,8 @@ using Microsoft.Win32;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using System.Linq;
+using System.IO;
+using System.Diagnostics;
 
 namespace Chat_Group_System
 {
@@ -43,6 +45,7 @@ namespace Chat_Group_System
                 foreach (var c in convos)
                 {
                     ViewModel.Conversations.Add(new ConversationViewModel(c, App.CurrentUser.Id));
+                    await _chatController.JoinGroupAsync(c.Id); // Join ALL groups to listen for unread messages
                 }
 
                 // 2. Mặc định chọn nhóm đầu tiên nếu có
@@ -343,6 +346,75 @@ namespace Chat_Group_System
         private void TxtSearch_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             ViewModel.SearchText = ((System.Windows.Controls.TextBox)sender).Text;
+        }
+
+        private void BtnDownloadAttachment_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is Attachment attachment)
+            {
+                if (string.IsNullOrEmpty(attachment.FileUrl)) return;
+
+                try
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog
+                    {
+                        FileName = attachment.FileName,
+                        Filter = "All files (*.*)|*.*"
+                    };
+
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        // Because FileUrl currently stores the local path from the sender, 
+                        // we can just copy it. In a real server scenario, this would be a Download/HttpClient call.
+                        if (File.Exists(attachment.FileUrl))
+                        {
+                            File.Copy(attachment.FileUrl, saveFileDialog.FileName, true);
+                            MessageBox.Show("Đã tải tệp xuống thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Không tìm thấy tệp nguồn để tải xuống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi tải xuống: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BtnPlayMedia_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn)
+            {
+                var media = FindMediaElement(btn);
+                media?.Play();
+            }
+        }
+
+        private void BtnPauseMedia_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn)
+            {
+                var media = FindMediaElement(btn);
+                media?.Pause();
+            }
+        }
+
+        private System.Windows.Controls.MediaElement? FindMediaElement(DependencyObject child)
+        {
+            DependencyObject parent = VisualTreeHelper.GetParent(child);
+            while (parent != null && !(parent is System.Windows.Controls.Grid))
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            if (parent is System.Windows.Controls.Grid grid)
+            {
+                return grid.Children.OfType<System.Windows.Controls.MediaElement>().FirstOrDefault();
+            }
+            return null;
         }
     }
 }
