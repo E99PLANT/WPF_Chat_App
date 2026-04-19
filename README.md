@@ -57,8 +57,9 @@
 | Tính năng | Mô tả |
 |-----------|-------|
 | **Gửi tin nhắn văn bản** | Nhắn tin tức thì qua SignalR |
-| **Gửi file đính kèm** | Upload và gửi file bất kỳ (≤ 25 MB) |
-| **Gửi ảnh** | Upload và gửi ảnh PNG/JPG/JPEG |
+| **Gửi file đính kèm** | Upload và download file bất kỳ (≤ 25 MB) |
+| **Xem ảnh & Video** | Xem trực tiếp ảnh và video (.mp4) ngay trong bong bóng chat |
+| **Download tệp** | Nút 📥 riêng biệt để tải mọi tệp đính kèm về máy |
 | **Tin nhắn hệ thống** | Tự động thông báo khi có người `Tham gia / Bị xoá / Rời đi` |
 | **Khóa chat tự động** | Thay thế khung chat bằng cảnh báo View-only khi người dùng không còn trong nhóm |
 | **Emoji Picker** | Chọn và chèn emoji vào tin nhắn 😊 |
@@ -99,7 +100,7 @@
 | **Danh sách cuộc trò chuyện** | Hiển thị tất cả Group + DM của user |
 | **Sắp xếp theo thời gian** | Conversation có tin nhắn mới nhất lên đầu |
 | **Tìm kiếm real-time** | Filter tên conversation ngay khi gõ |
-| **Unread badge** | Hiển thị số tin chưa đọc khi ở tab khác |
+| **Unread badge** | Hiển thị số tin chưa đọc & Bôi đậm tên cuộc trò chuyện |
 | **Preview tin cuối** | Hiển thị nội dung/tên file của tin nhắn gần nhất |
 | **Active highlight** | Highlight conversation đang chọn |
 
@@ -130,6 +131,9 @@
 │    ├── MainWindow        ChangePasswordWindow            │
 │    ├── CreateGroupWindow GroupSettingsWindow             │
 │    │                                                     │
+│  SignalR Server (Embedded)                               │
+│    └── Microsoft.AspNetCore.App / ChatHub                │
+│    │                                                     │
 │  ViewModels (CommunityToolkit.Mvvm)                      │
 │    ├── MainViewModel     ConversationViewModel           │
 │    └── MessageViewModel                                  │
@@ -151,12 +155,16 @@
 │    └── NexChatDbContext (EF Core Code First)             │
 └──────────────────────────────────────────────────────────┘
          │ SignalR Client                   │ EF Core
-         ▼                                 ▼
-  ┌─────────────┐                  ┌──────────────┐
-  │ SignalR Hub │                  │  SQL Server  │
-  │ (ASP.NET)  │                  │  NexChatDb   │
-  └─────────────┘                  └──────────────┘
+│ (Internal Loopback on Port 5000)   │
+▼                                   ▼
+┌───────────────────────────────────────┐          ┌──────────────┐
+│       EMBEDDED SIGNALR SERVER         │          │  SQL Server  │
+│    (Chạy ẩn trong tiến trình WPF)     │          │  NexChatDb   │
+└───────────────────────────────────────┘          └──────────────┘
 ```
+
+> [!NOTE]
+> NexChat sử dụng kiến trúc **Self-Hosted SignalR**. Cửa sổ ứng dụng đầu tiên được mở sẽ đóng vai trò là Hub Server. Các cửa sổ tiếp theo sẽ tự động kết nối tới Hub này như một Client thông thường.
 
 ---
 
@@ -195,7 +203,7 @@ Attachments                      MessageReads
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
 - [SQL Server](https://www.microsoft.com/sql-server) (LocalDB hoặc Full)
 - Visual Studio 2022+
-- **SignalR Hub Server** đang chạy tại `http://localhost:5000`
+- **Lưu ý**: Không cần cài đặt Server SignalR riêng lẻ vì đã được nhúng sẵn.
 
 ### Các bước
 
@@ -301,8 +309,13 @@ Chat_Group_System/
 │   ├── CreateGroupWindow.xaml / .cs
 │   └── GroupSettingsWindow.xaml / .cs
 │
-└── Helpers/
-    └── TimeHelper.cs                 # TimeZone helper (SE Asia Standard Time)
+├── Helpers/
+│   └── TimeHelper.cs                 # TimeZone helper (SE Asia Standard Time)
+│
+├── Hubs/
+│   └── ChatHub.cs                    # Centralized SignalR Hub (Real-time Routing)
+│
+└── Repositories/
 ```
 
 ---
