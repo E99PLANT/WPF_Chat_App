@@ -15,8 +15,9 @@ namespace Chat_Group_System.Controllers
 
         // Bọc lại các Event của SignalR để UI (MainWindow) lắng nghe
         public event Action<int, int, string>? OnMessageReceived;
-        public event Action<int, string>? OnUserTyping;
+        public event Action<int, string, bool>? OnUserTyping;
         public event Action<int, bool>? OnUserOnlineStatusChanged;
+        public event Action<int>? OnAddedToGroup;
 
         public ChatController(
             IMessageService messageService, 
@@ -29,8 +30,9 @@ namespace Chat_Group_System.Controllers
 
             // Chuyển tiếp event từ Service lên Controller
             _signalRService.MessageReceived += (convId, senderId, content) => OnMessageReceived?.Invoke(convId, senderId, content);
-            _signalRService.UserTyping += (convId, userName) => OnUserTyping?.Invoke(convId, userName);
+            _signalRService.UserTyping += (convId, userName, isTyping) => OnUserTyping?.Invoke(convId, userName, isTyping);
             _signalRService.UserOnlineStatusChanged += (uid, isOnline) => OnUserOnlineStatusChanged?.Invoke(uid, isOnline);
+            _signalRService.AddedToGroup += (convId) => OnAddedToGroup?.Invoke(convId);
         }
 
         // ── SignalR Connection ─────────────────────────────────
@@ -54,9 +56,14 @@ namespace Chat_Group_System.Controllers
             await _signalRService.LeaveGroupAsync(conversationId);
         }
 
-        public async Task NotifyTypingAsync(int conversationId, string userName)
+        public async Task NotifyTypingAsync(int conversationId, string userName, bool isTyping)
         {
-            await _signalRService.NotifyTypingAsync(conversationId, userName);
+            await _signalRService.NotifyTypingAsync(conversationId, userName, isTyping);
+        }
+
+        public async Task NotifyUserAddedToGroupAsync(int targetUserId, int conversationId)
+        {
+            await _signalRService.NotifyUserAddedToGroupAsync(targetUserId, conversationId);
         }
 
         // ── Conversations ──────────────────────────────────────
@@ -110,6 +117,9 @@ namespace Chat_Group_System.Controllers
                     Content = sysMsg.Content
                 });
                 await _signalRService.SendMessageAsync(conversationId, sysMsg.SenderId, "[SYSTEM]" + payload);
+
+                // Notify the added user so they can join realtime group
+                await NotifyUserAddedToGroupAsync(newMemberId, conversationId);
 
                 return (true, "Member added successfully");
             }
