@@ -59,7 +59,8 @@ namespace Chat_Group_System.Models.Entities
         File = 1,
         Image = 2,
         /// <summary>Tin hệ thống: "Nguyen Van A đã tham gia nhóm"</summary>
-        System = 3
+        System = 3,
+        Video = 4
     }
 
     public enum MessageStatus

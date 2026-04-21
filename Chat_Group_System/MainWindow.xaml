@@ -40,11 +40,14 @@
                                 <!-- 2. VIDEO VIEW -->
                                 <Border x:Name="VidBorder" Background="#4F4EAA" CornerRadius="8" Visibility="Collapsed">
                                     <Grid>
-                                        <MediaElement x:Name="ChatMediaElement" LoadedBehavior="Manual" UnloadedBehavior="Stop" MaxHeight="300" Volume="1.0" Margin="2"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Button Click="BtnPlayMedia_Click" Content="▶" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-                                            <Button Click="BtnPauseMedia_Click" Content="⏸" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-                                        </StackPanel>
+                                        <MediaElement x:Name="ChatMediaElement" Loaded="ChatMediaElement_Loaded" LoadedBehavior="Manual" UnloadedBehavior="Manual" MaxHeight="300" Volume="1.0" Margin="2" ScrubbingEnabled="True" IsMuted="True"/>
+                                        <Border Tag="VideoOverlay" Background="#00000000">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="▶" Foreground="White" FontSize="34" HorizontalAlignment="Center"/>
+                                                <!-- <TextBlock Text="{Binding FileName}" Foreground="White" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="220" Margin="0,4,0,0"/>-->
+                                            </StackPanel>
+                                        </Border>
+                                        <Button Tag="VideoPlayButton" Click="BtnPlayMedia_Click" Content="▶" Width="52" Height="52" Background="#00000000" Foreground="#00FFFFFF" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Phát video"/>
                                         <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
                                     </Grid>
                                 </Border>
@@ -115,11 +118,14 @@
                                 <!-- 2. VIDEO VIEW -->
                                 <Border x:Name="VidBorder" Background="#E0E0E0" CornerRadius="8" Visibility="Collapsed">
                                     <Grid>
-                                        <MediaElement x:Name="OtherChatMediaElement" LoadedBehavior="Manual" UnloadedBehavior="Stop" MaxHeight="300" Volume="1.0" Margin="2"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Button Click="BtnPlayMedia_Click" Content="▶" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-                                            <Button Click="BtnPauseMedia_Click" Content="⏸" Width="40" Height="40" Background="#80000000" Foreground="White" FontSize="20" BorderThickness="0" Cursor="Hand" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-                                        </StackPanel>
+                                        <MediaElement x:Name="OtherChatMediaElement" Loaded="ChatMediaElement_Loaded" LoadedBehavior="Manual" UnloadedBehavior="Manual" MaxHeight="300" Volume="1.0" Margin="2" ScrubbingEnabled="True" IsMuted="True"/>
+                                        <Border Tag="VideoOverlay" Background="#00000000">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="▶" Foreground="White" FontSize="34" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileName}" Foreground="White" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="220" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Button Tag="VideoPlayButton" Click="BtnPlayMedia_Click" Content="▶" Width="52" Height="52" Background="#00000000" Foreground="#00FFFFFF" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Phát video"/>
                                         <Button Click="BtnDownloadAttachment_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5" Width="30" Height="30" Content="📥" Background="#80000000" Foreground="White" BorderThickness="0" Cursor="Hand" ToolTip="Tải xuống"/>
                                     </Grid>
                                 </Border>

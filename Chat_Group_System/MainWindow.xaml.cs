@@ -149,7 +149,8 @@ namespace Chat_Group_System
             OpenFileDialog openFileDialog = new OpenFileDialog() { Title = "Select a file", Filter = "All files (*.*)|*.*" };
             if (openFileDialog.ShowDialog() == true)
             {
-                var result = await _chatController.SendAttachmentMessageAsync(ViewModel.SelectedConversation.Id, App.CurrentUser.Id, openFileDialog.FileName, MessageType.File);
+                var fileType = IsVideoFile(openFileDialog.FileName) ? MessageType.Video : MessageType.File;
+                var result = await _chatController.SendAttachmentMessageAsync(ViewModel.SelectedConversation.Id, App.CurrentUser.Id, openFileDialog.FileName, fileType);
                 if (result.Success && result.SentMessage != null)
                 {
                     ViewModel.CurrentMessages.Add(new MessageViewModel(result.SentMessage));
@@ -352,35 +353,51 @@ namespace Chat_Group_System
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is Attachment attachment)
             {
-                if (string.IsNullOrEmpty(attachment.FileUrl)) return;
+                if (string.IsNullOrEmpty(attachment.FileUrl)) 
+                {
+                    MessageBox.Show("Đường dẫn tệp không hợp lệ hoặc trống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
                 try
                 {
+                    string ext = System.IO.Path.GetExtension(attachment.FileName);
                     SaveFileDialog saveFileDialog = new SaveFileDialog
                     {
                         FileName = attachment.FileName,
-                        Filter = "All files (*.*)|*.*"
+                        Filter = "All files (*.*)|*.*",
+                        DefaultExt = ext
                     };
 
                     if (saveFileDialog.ShowDialog() == true)
                     {
-                        // Because FileUrl currently stores the local path from the sender, 
-                        // we can just copy it. In a real server scenario, this would be a Download/HttpClient call.
                         if (File.Exists(attachment.FileUrl))
                         {
+                            // Tránh ghi đè chính gốc tệp (thường gặp khi test app chạy ở 1 máy)
+                            if (attachment.FileUrl.Equals(saveFileDialog.FileName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                MessageBox.Show("Tệp lưu đè lên file gốc của hệ thống nên vẫn tồn tại ở vị trí cũ! Mọi thứ đã hoàn tất.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                                return;
+                            }
+
+                            // Copy file kèm thông báo cụ thể định dạng
                             File.Copy(attachment.FileUrl, saveFileDialog.FileName, true);
-                            MessageBox.Show("Đã tải tệp xuống thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show($"Đã tải tệp xuống thành công!\n\nLưu tại: {saveFileDialog.FileName}", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                         else
                         {
-                            MessageBox.Show("Không tìm thấy tệp nguồn để tải xuống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show("Không tìm thấy tệp nguồn để tải xuống. Tệp có thể đã bị xóa khỏi thiết bị người gửi gốc.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Lỗi khi tải xuống: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Lỗi khi tải xuống: {ex.Message}", "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+            else
+            {
+                MessageBox.Show("Không thể định danh tệp đính kèm. DataContext bị lỗi.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -389,7 +406,24 @@ namespace Chat_Group_System
             if (sender is System.Windows.Controls.Button btn)
             {
                 var media = FindMediaElement(btn);
-                media?.Play();
+                if (media != null)
+                {
+                    media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+                    media.IsMuted = false;
+                    media.Play();
+                    SetVideoOverlayVisibility(btn, Visibility.Collapsed);
+                    media.MediaEnded -= Media_MediaEnded;
+                    media.MediaEnded += Media_MediaEnded;
+                }
+            }
+        }
+
+        private void MediaElement_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MediaElement media)
+            {
+                media.Play();
+                media.Pause();
             }
         }
 
@@ -398,7 +432,65 @@ namespace Chat_Group_System
             if (sender is System.Windows.Controls.Button btn)
             {
                 var media = FindMediaElement(btn);
-                media?.Pause();
+                if (media != null)
+                {
+                    media.Pause();
+                    media.IsMuted = true;
+                    SetVideoOverlayVisibility(btn, Visibility.Visible);
+                }
+            }
+        }
+
+        private void Media_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MediaElement media)
+            {
+                media.Stop();
+                media.Position = TimeSpan.Zero;
+                media.IsMuted = true;
+                media.Pause();
+                if (VisualTreeHelper.GetParent(media) is System.Windows.Controls.Grid grid)
+                {
+                    SetVideoOverlayVisibility(grid, Visibility.Visible);
+                }
+            }
+        }
+
+        private void ChatMediaElement_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MediaElement media) return;
+            if (Equals(media.Tag, "PreviewInitialized")) return;
+
+            media.Tag = "PreviewInitialized";
+            media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+            media.MediaOpened += ChatMediaElement_PreviewMediaOpened;
+
+            // Force open media once so we can capture/show the first frame as thumbnail.
+            try
+            {
+                media.Play();
+            }
+            catch
+            {
+                // Ignore and keep fallback overlay.
+            }
+        }
+
+        private void ChatMediaElement_PreviewMediaOpened(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MediaElement media) return;
+
+            media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+            try
+            {
+                media.Play();
+                media.Position = TimeSpan.FromMilliseconds(1);
+                media.Pause();
+            }
+            catch
+            {
+                media.Position = TimeSpan.Zero;
+                media.Pause();
             }
         }
 
@@ -415,6 +507,46 @@ namespace Chat_Group_System
                 return grid.Children.OfType<System.Windows.Controls.MediaElement>().FirstOrDefault();
             }
             return null;
+        }
+
+        private void SetVideoOverlayVisibility(DependencyObject child, Visibility visibility)
+        {
+            DependencyObject? parent = child;
+            while (parent != null && parent is not System.Windows.Controls.Grid)
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            if (parent is System.Windows.Controls.Grid grid)
+            {
+                SetVideoOverlayVisibility(grid, visibility);
+            }
+        }
+
+        private static void SetVideoOverlayVisibility(System.Windows.Controls.Grid grid, Visibility visibility)
+        {
+            foreach (var border in grid.Children.OfType<System.Windows.Controls.Border>())
+            {
+                if (border.Tag as string == "VideoOverlay")
+                {
+                    border.Visibility = visibility;
+                }
+            }
+
+            foreach (var button in grid.Children.OfType<System.Windows.Controls.Button>())
+            {
+                if (button.Tag as string == "VideoPlayButton")
+                {
+                    button.Visibility = visibility;
+                }
+            }
+
+        }
+
+        private static bool IsVideoFile(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            return extension is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv" or ".webm";
         }
     }
 }

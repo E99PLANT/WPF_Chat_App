@@ -223,13 +223,14 @@ namespace Chat_Group_System.Controllers
                 // 1. Lưu vào Database
                 var savedMsg = await _messageService.SendAttachmentMessageAsync(conversationId, senderId, fileName, filePath, fileSize, type);
 
-                // 2. Broadcast JSON payload
-                var payload = System.Text.Json.JsonSerializer.Serialize(new { 
+                // 2. Broadcast JSON payload using the new centralized FileUrl
+                string finalFilePath = savedMsg.Attachments?.FirstOrDefault()?.FileUrl ?? filePath;
+                var payload = System.Text.Json.JsonSerializer.Serialize(new {
                     Id = savedMsg.Id,
                     Type = type,
                     FileName = fileName,
                     FileSize = fileSize,
-                    FilePath = filePath
+                    FilePath = finalFilePath
                 });
                 await _signalRService.SendMessageAsync(conversationId, senderId, "[ATTACHMENT]" + payload);
 

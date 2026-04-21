@@ -159,6 +159,12 @@ namespace Chat_Group_System.ViewModels
                             var fileName = data.TryGetProperty("FileName", out var fnProp) ? fnProp.GetString() : null;
                             var fileSize = data.TryGetProperty("FileSize", out var fsProp) ? fsProp.GetInt64() : 0;
                             var filePath = data.TryGetProperty("FilePath", out var fpProp) ? fpProp.GetString() : null;
+                            var attachmentType = msg.Type switch
+                            {
+                                MessageType.Image => AttachmentType.Image,
+                                MessageType.Video => AttachmentType.Video,
+                                _ => AttachmentType.File
+                            };
 
                             if (fileName != null)
                             {
@@ -166,7 +172,8 @@ namespace Chat_Group_System.ViewModels
                                 {
                                     FileName = fileName,
                                     SizeBytes = fileSize,
-                                    FileUrl = filePath ?? ""
+                                    FileUrl = filePath ?? "",
+                                    Type = attachmentType
                                 });
                             }
                             var msgViewModel = new MessageViewModel(msg);
@@ -226,7 +233,7 @@ namespace Chat_Group_System.ViewModels
                     {
                         targetConv.UnreadCount++;
                         targetConv.LastMessagePreview = content.StartsWith("[SYSTEM]") ? "Tin nhắn hệ thống" : 
-                            (content.StartsWith("[ATTACHMENT]") ? "[File Attached]" : content);
+                            (content.StartsWith("[ATTACHMENT]") ? "[Attachment]" : content);
                     }
                 }
             });
