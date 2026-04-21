@@ -149,7 +149,8 @@ namespace Chat_Group_System
             OpenFileDialog openFileDialog = new OpenFileDialog() { Title = "Select a file", Filter = "All files (*.*)|*.*" };
             if (openFileDialog.ShowDialog() == true)
             {
-                var result = await _chatController.SendAttachmentMessageAsync(ViewModel.SelectedConversation.Id, App.CurrentUser.Id, openFileDialog.FileName, MessageType.File);
+                var fileType = IsVideoFile(openFileDialog.FileName) ? MessageType.Video : MessageType.File;
+                var result = await _chatController.SendAttachmentMessageAsync(ViewModel.SelectedConversation.Id, App.CurrentUser.Id, openFileDialog.FileName, fileType);
                 if (result.Success && result.SentMessage != null)
                 {
                     ViewModel.CurrentMessages.Add(new MessageViewModel(result.SentMessage));
@@ -389,7 +390,15 @@ namespace Chat_Group_System
             if (sender is System.Windows.Controls.Button btn)
             {
                 var media = FindMediaElement(btn);
-                media?.Play();
+                if (media != null)
+                {
+                    media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+                    media.IsMuted = false;
+                    media.Play();
+                    SetVideoOverlayVisibility(btn, Visibility.Collapsed);
+                    media.MediaEnded -= Media_MediaEnded;
+                    media.MediaEnded += Media_MediaEnded;
+                }
             }
         }
 
@@ -398,7 +407,65 @@ namespace Chat_Group_System
             if (sender is System.Windows.Controls.Button btn)
             {
                 var media = FindMediaElement(btn);
-                media?.Pause();
+                if (media != null)
+                {
+                    media.Pause();
+                    media.IsMuted = true;
+                    SetVideoOverlayVisibility(btn, Visibility.Visible);
+                }
+            }
+        }
+
+        private void Media_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MediaElement media)
+            {
+                media.Stop();
+                media.Position = TimeSpan.Zero;
+                media.IsMuted = true;
+                media.Pause();
+                if (VisualTreeHelper.GetParent(media) is System.Windows.Controls.Grid grid)
+                {
+                    SetVideoOverlayVisibility(grid, Visibility.Visible);
+                }
+            }
+        }
+
+        private void ChatMediaElement_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MediaElement media) return;
+            if (Equals(media.Tag, "PreviewInitialized")) return;
+
+            media.Tag = "PreviewInitialized";
+            media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+            media.MediaOpened += ChatMediaElement_PreviewMediaOpened;
+
+            // Force open media once so we can capture/show the first frame as thumbnail.
+            try
+            {
+                media.Play();
+            }
+            catch
+            {
+                // Ignore and keep fallback overlay.
+            }
+        }
+
+        private void ChatMediaElement_PreviewMediaOpened(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.MediaElement media) return;
+
+            media.MediaOpened -= ChatMediaElement_PreviewMediaOpened;
+            try
+            {
+                media.Play();
+                media.Position = TimeSpan.FromMilliseconds(1);
+                media.Pause();
+            }
+            catch
+            {
+                media.Position = TimeSpan.Zero;
+                media.Pause();
             }
         }
 
@@ -415,6 +482,46 @@ namespace Chat_Group_System
                 return grid.Children.OfType<System.Windows.Controls.MediaElement>().FirstOrDefault();
             }
             return null;
+        }
+
+        private void SetVideoOverlayVisibility(DependencyObject child, Visibility visibility)
+        {
+            DependencyObject? parent = child;
+            while (parent != null && parent is not System.Windows.Controls.Grid)
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            if (parent is System.Windows.Controls.Grid grid)
+            {
+                SetVideoOverlayVisibility(grid, visibility);
+            }
+        }
+
+        private static void SetVideoOverlayVisibility(System.Windows.Controls.Grid grid, Visibility visibility)
+        {
+            foreach (var border in grid.Children.OfType<System.Windows.Controls.Border>())
+            {
+                if (border.Tag as string == "VideoOverlay")
+                {
+                    border.Visibility = visibility;
+                }
+            }
+
+            foreach (var button in grid.Children.OfType<System.Windows.Controls.Button>())
+            {
+                if (button.Tag as string == "VideoPlayButton")
+                {
+                    button.Visibility = visibility;
+                }
+            }
+
+        }
+
+        private static bool IsVideoFile(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            return extension is ".mp4" or ".mov" or ".avi" or ".mkv" or ".wmv" or ".webm";
         }
     }
 }

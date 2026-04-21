@@ -42,6 +42,20 @@ namespace Chat_Group_System.Services
 
         public async Task<Message> SendAttachmentMessageAsync(int conversationId, int senderId, string fileName, string fileUrl, long fileSize, MessageType type)
         {
+            var attachmentType = type switch
+            {
+                MessageType.Image => AttachmentType.Image,
+                MessageType.Video => AttachmentType.Video,
+                _ => AttachmentType.File
+            };
+
+            var mimeType = type switch
+            {
+                MessageType.Image => "image/jpeg",
+                MessageType.Video => "video/mp4",
+                _ => "application/octet-stream"
+            };
+
             var msg = new Message
             {
                 ConversationId = conversationId,
@@ -57,8 +71,8 @@ namespace Chat_Group_System.Services
                         StoredFileName = $"{Guid.NewGuid()}_{fileName}",
                         FileUrl = fileUrl,
                         SizeBytes = fileSize,
-                        MimeType = type == MessageType.Image ? "image/jpeg" : "application/octet-stream",
-                        Type = type == MessageType.Image ? AttachmentType.Image : AttachmentType.File,
+                        MimeType = mimeType,
+                        Type = attachmentType,
                         UploadedAt = Chat_Group_System.Helpers.TimeHelper.NowVN
                     }
                 }
@@ -66,7 +80,12 @@ namespace Chat_Group_System.Services
 
             var savedMessage = await _messageRepository.AddMessageAsync(msg);
             
-            var preview = type == MessageType.Image ? "[Image]" : "[File]";
+            var preview = type switch
+            {
+                MessageType.Image => "[Image]",
+                MessageType.Video => "[Video]",
+                _ => "[File]"
+            };
             await _conversationService.UpdateLastMessagePreviewAsync(conversationId, preview);
 
             return await _messageRepository.GetMessageByIdAsync(savedMessage.Id) ?? savedMessage;
