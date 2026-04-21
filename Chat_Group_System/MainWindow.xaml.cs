@@ -353,35 +353,51 @@ namespace Chat_Group_System
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is Attachment attachment)
             {
-                if (string.IsNullOrEmpty(attachment.FileUrl)) return;
+                if (string.IsNullOrEmpty(attachment.FileUrl)) 
+                {
+                    MessageBox.Show("Đường dẫn tệp không hợp lệ hoặc trống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
                 try
                 {
+                    string ext = System.IO.Path.GetExtension(attachment.FileName);
                     SaveFileDialog saveFileDialog = new SaveFileDialog
                     {
                         FileName = attachment.FileName,
-                        Filter = "All files (*.*)|*.*"
+                        Filter = "All files (*.*)|*.*",
+                        DefaultExt = ext
                     };
 
                     if (saveFileDialog.ShowDialog() == true)
                     {
-                        // Because FileUrl currently stores the local path from the sender, 
-                        // we can just copy it. In a real server scenario, this would be a Download/HttpClient call.
                         if (File.Exists(attachment.FileUrl))
                         {
+                            // Tránh ghi đè chính gốc tệp (thường gặp khi test app chạy ở 1 máy)
+                            if (attachment.FileUrl.Equals(saveFileDialog.FileName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                MessageBox.Show("Tệp lưu đè lên file gốc của hệ thống nên vẫn tồn tại ở vị trí cũ! Mọi thứ đã hoàn tất.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                                return;
+                            }
+
+                            // Copy file kèm thông báo cụ thể định dạng
                             File.Copy(attachment.FileUrl, saveFileDialog.FileName, true);
-                            MessageBox.Show("Đã tải tệp xuống thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show($"Đã tải tệp xuống thành công!\n\nLưu tại: {saveFileDialog.FileName}", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                         else
                         {
-                            MessageBox.Show("Không tìm thấy tệp nguồn để tải xuống.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show("Không tìm thấy tệp nguồn để tải xuống. Tệp có thể đã bị xóa khỏi thiết bị người gửi gốc.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Lỗi khi tải xuống: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Lỗi khi tải xuống: {ex.Message}", "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+            else
+            {
+                MessageBox.Show("Không thể định danh tệp đính kèm. DataContext bị lỗi.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -399,6 +415,15 @@ namespace Chat_Group_System
                     media.MediaEnded -= Media_MediaEnded;
                     media.MediaEnded += Media_MediaEnded;
                 }
+            }
+        }
+
+        private void MediaElement_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MediaElement media)
+            {
+                media.Play();
+                media.Pause();
             }
         }
 

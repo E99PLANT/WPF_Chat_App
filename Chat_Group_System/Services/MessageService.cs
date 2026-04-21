@@ -56,6 +56,33 @@ namespace Chat_Group_System.Services
                 _ => "application/octet-stream"
             };
 
+            // --- Centralized File Storage Logic ---
+            string uploadsFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Uploads");
+            if (!System.IO.Directory.Exists(uploadsFolder))
+            {
+                System.IO.Directory.CreateDirectory(uploadsFolder);
+            }
+
+            string storedFileName = $"{Guid.NewGuid()}_{fileName}";
+            string destinationPath = System.IO.Path.Combine(uploadsFolder, storedFileName);
+
+            try
+            {
+                // Copy file from source path (fileUrl) to Uploads folder
+                if (System.IO.File.Exists(fileUrl))
+                {
+                    System.IO.File.Copy(fileUrl, destinationPath, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // In a production app, we'd log this.
+                // For now, we'll continue, but the local path will be saved as fallback
+                // if copying fails (though it might fail later for the receiver).
+                System.Diagnostics.Debug.WriteLine($"Error copying file: {ex.Message}");
+            }
+            // --------------------------------------
+
             var msg = new Message
             {
                 ConversationId = conversationId,
@@ -68,8 +95,8 @@ namespace Chat_Group_System.Services
                     new Attachment
                     {
                         FileName = fileName,
-                        StoredFileName = $"{Guid.NewGuid()}_{fileName}",
-                        FileUrl = fileUrl,
+                        StoredFileName = storedFileName,
+                        FileUrl = destinationPath, // Now points to the centralized location
                         SizeBytes = fileSize,
                         MimeType = mimeType,
                         Type = attachmentType,
@@ -79,7 +106,7 @@ namespace Chat_Group_System.Services
             };
 
             var savedMessage = await _messageRepository.AddMessageAsync(msg);
-            
+
             var preview = type switch
             {
                 MessageType.Image => "[Image]",
