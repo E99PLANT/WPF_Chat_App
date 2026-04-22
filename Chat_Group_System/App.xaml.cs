@@ -68,14 +68,25 @@ namespace Chat_Group_System
                     });
                 });
 
-                // Configure port from appsettings (if you have "HubUrl": "http://localhost:5000/chatHub")
-                // Here we simply bind to port 5000
-                builder.WebHost.UseUrls("http://localhost:5000");
+                // Configure port from appsettings. Bind to 0.0.0.0 to allow LAN connections.
+                var hubUrlConfig = Configuration["SignalR:HubUrl"] ?? "http://localhost:5000/chatHub";
+                string listenUrl = "http://0.0.0.0:5000";
+                string hubPath = "/chatHub";
+
+                try 
+                {
+                    var uri = new Uri(hubUrlConfig);
+                    listenUrl = $"http://0.0.0.0:{uri.Port}";
+                    hubPath = uri.AbsolutePath;
+                }
+                catch { /* Fallback to defaults */ }
+
+                builder.WebHost.UseUrls(listenUrl);
 
                 _webHost = builder.Build();
 
                 _webHost.UseCors();
-                _webHost.MapHub<ChatHub>("/chatHub");
+                _webHost.MapHub<ChatHub>(hubPath);
 
                 await _webHost.RunAsync();
             }

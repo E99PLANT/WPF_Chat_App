@@ -36,7 +36,7 @@ Mặc định SQL Server ở chế độ "kỉ bí", bạn phải ép nó mở c
 2. Chọn **Inbound Rules** > click **New Rule...** (bên góc phải).
 3. Chọn **Port** > Next. Mặc định là TCP, gõ vào ô *Specific local ports*: 
    * `1433` (cho Database SQL).
-   * `, 5000` (Thêm cổng cho SignalR nếu SignalR của bạn dùng Port 5000)
+   * `5000` (cho SignalR Server).
    > Bạn có thể gõ: `1433, 5000` > Nhấn Next.
 4. Chọn **Allow the connection** > Next > Next. Đặt tên, ví dụ: `Cho app Chat` > Finish.
 
@@ -62,11 +62,14 @@ Sửa thành y như này:
 ```
 *(nhớ đổi bằng IP thật ở B1 và pass thật).*
 
-### 2. File kết nối SignalR (`ChatController.cs` hoặc nơi gọi API Hub)
-Chỗ gõ `.WithUrl("http://localhost:5000/chathub")` -> Sửa lại thành:
-```csharp
-.WithUrl("http://192.168.1.50:5000/chathub")
+### 2. File kết nối SignalR (`appsettings.json`)
+Cấu hình URL của SignalR Hub để các máy khác có thể kết nối tới:
+```json
+"SignalR": {
+  "HubUrl": "http://192.168.1.50:5000/chatHub"
+}
 ```
+*(Code đã được cập nhật để tự động lắng nghe trên cổng này và cho phép kết nối LAN).*
 
 ### 3. File nhận/gửi hình ảnh (`MessageService.cs`)
 Tìm nơi lưu folder Uploads (vd biến `string uploadsFolder`), sửa thành đường dẫn chia sẻ mạng (nơi mà file bạn Shared ở Bước 4):
