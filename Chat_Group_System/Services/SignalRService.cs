@@ -17,7 +17,7 @@ namespace Chat_Group_System.Services
 
         public SignalRService(IConfiguration config)
         {
-            _hubUrlSettings = config["SignalR:HubUrl"] ?? "http://localhost:5000/chatHub";
+            _hubUrlSettings = config["SignalR:HubUrl"] ?? "http://10.87.40.5:5000/chathub";
         }
 
         public async Task ConnectAsync(int userId)

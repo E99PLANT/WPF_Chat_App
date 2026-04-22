@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using System.IO;
 using Chat_Group_System.Models.Entities;
 using Chat_Group_System.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace Chat_Group_System.Controllers
 {
@@ -12,6 +14,7 @@ namespace Chat_Group_System.Controllers
         private readonly IMessageService _messageService;
         private readonly IConversationService _conversationService;
         private readonly ISignalRService _signalRService;
+        private readonly IConfiguration _configuration;
 
         // Bọc lại các Event của SignalR để UI (MainWindow) lắng nghe
         public event Action<int, int, string>? OnMessageReceived;
@@ -22,11 +25,13 @@ namespace Chat_Group_System.Controllers
         public ChatController(
             IMessageService messageService, 
             IConversationService conversationService, 
-            ISignalRService signalRService)
+            ISignalRService signalRService,
+            IConfiguration configuration)
         {
             _messageService = messageService;
             _conversationService = conversationService;
             _signalRService = signalRService;
+            _configuration = configuration;
 
             // Chuyển tiếp event từ Service lên Controller
             _signalRService.MessageReceived += (convId, senderId, content) => OnMessageReceived?.Invoke(convId, senderId, content);
@@ -217,11 +222,24 @@ namespace Chat_Group_System.Controllers
         {
             try
             {
-                string fileName = System.IO.Path.GetFileName(filePath);
-                long fileSize = new System.IO.FileInfo(filePath).Length;
+                string fileName = Path.GetFileName(filePath);
+                string uploadsFolder = _configuration["AppSettings:UploadFolder"] ?? @"\\DATLE\ChatUploads";
+
+                if (!Path.IsPathRooted(uploadsFolder))
+                {
+                    uploadsFolder = Path.GetFullPath(uploadsFolder);
+                }
+
+                Directory.CreateDirectory(uploadsFolder);
+
+                string storedFileName = $"{Guid.NewGuid()}_{fileName}";
+                string storedFilePath = Path.Combine(uploadsFolder, storedFileName);
+                File.Copy(filePath, storedFilePath, true);
+
+                long fileSize = new FileInfo(storedFilePath).Length;
 
                 // 1. Lưu vào Database
-                var savedMsg = await _messageService.SendAttachmentMessageAsync(conversationId, senderId, fileName, filePath, fileSize, type);
+                var savedMsg = await _messageService.SendAttachmentMessageAsync(conversationId, senderId, fileName, storedFilePath, fileSize, type);
 
                 // 2. Broadcast JSON payload using the new centralized FileUrl
                 string finalFilePath = savedMsg.Attachments?.FirstOrDefault()?.FileUrl ?? filePath;
