@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
+using System.Windows;
 
 namespace Chat_Group_System.Services
 {
@@ -55,7 +56,7 @@ namespace Chat_Group_System.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error connecting SignalR: {ex.Message}");
+                MessageBox.Show($"SignalR Connection Error: {ex.Message}\nURL: {hubUrl}", "SignalR Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -81,7 +81,7 @@ namespace Chat_Group_System
                 }
                 catch { /* Fallback to defaults */ }
 
-                builder.WebHost.UseUrls(listenUrl);
+                builder.WebHost.UseUrls(listenUrl.Replace("0.0.0.0", "*"));
 
                 _webHost = builder.Build();
 
@@ -92,7 +92,7 @@ namespace Chat_Group_System
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Could not start SignalR Host (probably another instance is already hosting it): {ex.Message}");
+                MessageBox.Show($"Could not start SignalR Host: {ex.Message}", "SignalR Server Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

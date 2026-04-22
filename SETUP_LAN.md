@@ -47,6 +47,13 @@ Mặc định SQL Server ở chế độ "kỉ bí", bạn phải ép nó mở c
 4. Chỉnh quyền (Permission Level) của Everyone thành **Read/Write**. Nhấn **Share**.
 5. Bạn sẽ thấy sinh ra 1 cái link URL (Ví dụ: `\\192.168.1.50\ChatUploads`). Giữ link này lại.
 
+### Bước 5: Tắt yêu cầu mật khẩu (QUAN TRỌNG)
+Để máy khác không bị hỏi mật khẩu khi gửi file:
+1. Vào **Control Panel** > **Network and Sharing Center** > **Change advanced sharing settings**.
+2. Mở mục **All Networks**.
+3. Ở dưới cùng, chọn **Turn off password protected sharing**.
+4. Nhấn **Save changes**.
+
 ---
 
 ## 🛠 PHẦN 2: SỬA CODE WPF (Ở mọi máy tính)

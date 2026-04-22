@@ -220,17 +220,25 @@ namespace Chat_Group_System.Controllers
 
         public async Task<(bool Success, string Message, Message? SentMessage)> SendAttachmentMessageAsync(int conversationId, int senderId, string filePath, MessageType type)
         {
+            string uploadsFolder = _configuration["AppSettings:UploadFolder"] ?? @"\\10.87.11.53\FIleUploads";
             try
             {
                 string fileName = Path.GetFileName(filePath);
-                string uploadsFolder = _configuration["AppSettings:UploadFolder"] ?? @"\\DATLE\ChatUploads";
 
                 if (!Path.IsPathRooted(uploadsFolder))
                 {
                     uploadsFolder = Path.GetFullPath(uploadsFolder);
                 }
 
-                Directory.CreateDirectory(uploadsFolder);
+                // Nếu là đường dẫn mạng, kiểm tra sự tồn tại trước khi Create
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    try {
+                        Directory.CreateDirectory(uploadsFolder);
+                    } catch (Exception exDir) {
+                        throw new Exception($"Cannot access or create folder: {uploadsFolder}. System error: {exDir.Message}");
+                    }
+                }
 
                 string storedFileName = $"{Guid.NewGuid()}_{fileName}";
                 string storedFilePath = Path.Combine(uploadsFolder, storedFileName);
@@ -256,7 +264,9 @@ namespace Chat_Group_System.Controllers
             }
             catch (Exception ex)
             {
-                return (false, $"Failed to send attachment: {ex.Message}", null);
+                string errorMsg = $"Failed to send attachment.\nPath: {uploadsFolder}\nError: {ex.Message}";
+                if (ex.InnerException != null) errorMsg += $"\nInner: {ex.InnerException.Message}";
+                return (false, errorMsg, null);
             }
         }
     }

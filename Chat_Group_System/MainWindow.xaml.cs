@@ -156,6 +156,10 @@ namespace Chat_Group_System
                     ViewModel.CurrentMessages.Add(new MessageViewModel(result.SentMessage));
                     ScrollToBottom();
                 }
+                else
+                {
+                    MessageBox.Show(result.Message, "Error Sending File", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -171,6 +175,10 @@ namespace Chat_Group_System
                 {
                     ViewModel.CurrentMessages.Add(new MessageViewModel(result.SentMessage));
                     ScrollToBottom();
+                }
+                else
+                {
+                    MessageBox.Show(result.Message, "Error Sending Image", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -293,7 +301,7 @@ namespace Chat_Group_System
 
         private async void BtnGroupSettings_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.SelectedConversation == null)
+            if (App.CurrentUser == null || ViewModel.SelectedConversation == null)
             {
                 MessageBox.Show("Please select a conversation first.");
                 return;
