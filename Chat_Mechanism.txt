@@ -1,0 +1,76 @@
+# Cơ chế Gửi và Nhận tin nhắn Real-time (SignalR)
+
+Tài liệu này giải thích quy trình luân chuyển dữ liệu khi một tin nhắn được gửi đi và nhận lại giữa hai phía (Người gửi và Người nhận) trong ứng dụng Chat Group System.
+
+---
+
+## 1. Quy trình Gửi tin nhắn (Phía Người gửi)
+
+Khi người dùng nhập văn bản và nhấn nút "Gửi", quy trình sau sẽ diễn ra:
+
+1.  **UI gọi Controller**: `ChatView` (WPF) gọi hàm `ChatController.SendTextMessageAsync(convId, senderId, content)`.
+2.  **Lưu Database**:
+    *   `ChatController` gọi `IMessageService` để lưu tin nhắn vào cơ sở dữ liệu SQL Server thông qua Entity Framework.
+    *   Việc lưu DB trước giúp đảm bảo tin nhắn không bị mất và có thể load lại sau này (Chat History).
+3.  **Kích hoạt SignalR (Phía Client)**:
+    *   Sau khi lưu thành công, `ChatController` gọi `SignalRService.SendMessageAsync`.
+    *   Hàm này sử dụng `hubConnection.InvokeAsync("SendMessage", ...)` để đẩy tin nhắn lên **SignalR Hub** trên Server.
+    *   *Lưu ý*: Đối với tệp đính kèm, nội dung sẽ được đóng gói dưới dạng JSON với tiền tố `[ATTACHMENT]`.
+
+---
+
+## 2. Quy trình Xử lý tại Server (SignalR Hub)
+
+Mặc dù mã nguồn Hub nằm ở phía Server, nhưng cơ chế hoạt động như sau:
+
+1.  **Nhận Signal**: Server nhận yêu cầu `SendMessage` từ người gửi.
+2.  **Định tuyến (Routing)**: Server xác định `conversationId` (Group ID).
+3.  **Phát sóng (Broadcast)**: Server sử dụng `Clients.Group(conversationId).SendAsync("ReceiveMessage", ...)` để gửi tin nhắn đến **tất cả** các thành viên đang online trong nhóm đó (bao gồm cả người gửi để xác nhận).
+
+---
+
+## 3. Quy trình Nhận tin nhắn (Phía Người nhận)
+
+Khi Server phát tín hiệu, các Client đang kết nối sẽ thực hiện các bước sau:
+
+1.  **Lắng nghe sự kiện**:
+    *   `SignalRService` luôn chạy ngầm và lắng nghe sự kiện `"ReceiveMessage"` từ Hub (được cấu hình trong hàm `ConnectAsync`).
+2.  **Kích hoạt Event nội bộ**:
+    *   Khi có tin nhắn tới, `SignalRService` kích hoạt sự kiện C# `MessageReceived`.
+    *   `ChatController` bắt được sự kiện này và chuyển tiếp qua event `OnMessageReceived`.
+3.  **Cập nhật UI**:
+    *   Giao diện người dùng (ví dụ `MainWindow.xaml.cs`) đăng ký lắng nghe `OnMessageReceived`.
+    *   Khi sự kiện nổ ra, UI sẽ:
+        *   Phân tích nội dung (Kiểm tra xem là tin nhắn văn bản, hệ thống hay tệp đính kèm).
+        *   Thêm một đối tượng `Message` mới vào `ObservableCollection` hiển thị trên màn hình.
+        *   Tự động cuộn xuống dưới cùng để người dùng thấy tin nhắn mới nhất.
+
+---
+
+## 4. Sơ đồ luồng dữ liệu (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant UserA as Người gửi (WPF)
+    participant DB as Database (SQL)
+    participant Hub as SignalR Server
+    participant UserB as Người nhận (WPF)
+
+    UserA->>UserA: Nhập tin nhắn & Nhấn Gửi
+    UserA->>DB: Lưu tin nhắn (Async)
+    DB-->>UserA: Trả về Message ID
+    UserA->>Hub: Invoke("SendMessage", conversationId, content)
+    Hub->>Hub: Tìm các kết nối trong Group
+    Hub-->>UserA: ReceiveMessage (Xác nhận đã gửi)
+    Hub-->>UserB: ReceiveMessage (Thông báo tin mới)
+    UserB->>UserB: Cập nhật giao diện Chat
+```
+
+---
+
+## 5. Các tính năng Real-time khác
+
+Ngoài tin nhắn, hệ thống còn sử dụng cơ chế tương tự cho:
+- **User Typing**: Thông báo khi có người đang gõ phím (`NotifyTypingAsync`).
+- **Online Status**: Cập nhật trạng thái online/offline của bạn bè.
+- **Group Notifications**: Thông báo khi được thêm vào nhóm mới (`AddedToGroup`).

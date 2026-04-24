@@ -220,7 +220,7 @@ namespace Chat_Group_System.Controllers
 
         public async Task<(bool Success, string Message, Message? SentMessage)> SendAttachmentMessageAsync(int conversationId, int senderId, string filePath, MessageType type)
         {
-            string uploadsFolder = _configuration["AppSettings:UploadFolder"] ?? @"\\10.87.11.53\FIleUploads";
+            string uploadsFolder = _configuration["AppSettings:UploadFolder"] ?? @"\\E99PLANT\FIleUploads";
             try
             {
                 string fileName = Path.GetFileName(filePath);
